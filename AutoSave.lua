@@ -19,16 +19,19 @@ Save24Name.Value = "AUTOSAVE"
 Save24.SaveLoad:FireServer("Load")
 
 local timeoutTable = {}
+local time = false
 local function timeout(callback)
     for _,v in ipairs(timeoutTable) do
         v[1] = false
     end
 
     task.spawn(function()
+        time = true
         local t = { true }
         table.insert(timeoutTable, t)
         wait(10)
         if t[1] ~= false then
+            time = false
             callback()
         end
 
@@ -41,5 +44,11 @@ workspace.Creations.DescendantAdded:Connect(function(v)
         timeout(function()
             Save24.SaveLoad:FireServer("Save")
         end)
+    end
+end)
+
+game.Players.OnRemoving:Connect(function(p)
+    if p == Client and time then
+        Save24.SaveLoad:FireServer("Save")
     end
 end)
