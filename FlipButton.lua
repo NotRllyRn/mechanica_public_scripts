@@ -62,13 +62,6 @@ local function FlipCreation(Model)
 	end
 	local part = getPartClosestToTop(Model)
 	if part then
-		local part2 = Instance.new("Part")
-		part2.Anchored = true
-		part2.Transparency = 0.3
-		part2.CanCollide = false
-		part2.CFrame = part.CFrame
-		part2.Parent = workspace
-
 		addToPart(part, Model)
 	end
 end
@@ -85,6 +78,7 @@ Button.Size = UDim2.new(1, 0, 0.5, 0)
 Button.Position = UDim2.new(1, 0, 0, 0)
 Button.Text = "Flip"
 Button.Visible = Spawned.Value
+Button.Parent = Frame
 
 Spawned.Changed:Connect(function(nValue)
     Button.Visible = nValue
