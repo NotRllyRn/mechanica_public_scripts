@@ -47,7 +47,7 @@ workspace.Creations.DescendantAdded:Connect(function(v)
     end
 end)
 
-game.Players.OnRemoving:Connect(function(p)
+game.Players.PlayerRemoving:Connect(function(p)
     if p == Client and time then
         Save24.SaveLoad:FireServer("Save")
     end
