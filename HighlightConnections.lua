@@ -2,9 +2,13 @@ if game.PlaceId ~= 6609611538 then return end
 if not game:IsLoaded() then
     game.Loaded:Wait() 
 end
-
 local client = game.Players.LocalPlayer
-local values = client.PlayerGui.MainGui.Values
+local GUI = client.PlayerGui.MainGui
+while GUI:FindFirstChild("LoadingScreenGui∙") or not GUI:FindFirstChild("MainGui") do
+    wait()
+end
+
+local values = GUI.Values
 local currentBlock = values.SelectedObject
 local HighlightFolder = Instance.new("Folder", workspace.Camera)
 
