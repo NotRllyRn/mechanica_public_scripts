@@ -2,10 +2,8 @@ if game.PlaceId ~= 6609611538 then return end
 if not game:IsLoaded() then
     game.Loaded:Wait() 
 end
-
 local Client = game.Players.LocalPlayer
 local GUI = Client:WaitForChild("PlayerGui")
-
 while GUI:FindFirstChild("LoadingScreenGui∙") or not GUI:FindFirstChild("MainGui") do
     wait()
 end
@@ -31,7 +29,7 @@ local function timeout(callback)
         local t = { true }
         table.insert(timeoutTable, t)
         wait(10)
-        if t[1] ~= false then
+        if t[1] then
             time = false
             callback()
         end
