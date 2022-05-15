@@ -9,7 +9,7 @@ while GUI:FindFirstChild("LoadingScreenGui∙") or not GUI:FindFirstChild("MainG
     wait()
 end
 
-wait(3)
+wait(1)
 
 local Save24 = GUI.MainGui.DespawnedUI.SideMenu.SavesBox.Saves["24"]
 local Save24Name = GUI.MainGui.SavingValues["CreationName 24"]
@@ -39,12 +39,17 @@ local function timeout(callback)
     end)
 end
 
-workspace.Creations.DescendantAdded:Connect(function(v)
-    if v.Parent.Name == Client.Name and not Spawned.Value then
+local search = {"Build", "Paint", "Configure", "Delete"}
+local old 
+old = hookmetamethod(game, "__namecall", function(...)
+    local self = select(1, ...)
+    local namecallmethod = getnamecallmethod()
+    if namecallmethod == "FireServer" and table.find(search, self.Name) then
         timeout(function()
             Save24.SaveLoad:FireServer("Save")
         end)
     end
+    return old(...)
 end)
 
 game.Players.PlayerRemoving:Connect(function(p)
