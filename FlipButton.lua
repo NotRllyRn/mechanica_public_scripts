@@ -1,3 +1,8 @@
+if game.PlaceId ~= 6609611538 then return end
+if not game:IsLoaded() then
+    game.Loaded:Wait() 
+end
+
 local function calculateMaxLength(Model)
 	local Size = Model:GetExtentsSize()
 	local Max = math.max(Size.X, Size.Y, Size.Z)
