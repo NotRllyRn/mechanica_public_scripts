@@ -2,15 +2,18 @@ if game.PlaceId ~= 6609611538 then return end
 if not game:IsLoaded() then
     game.Loaded:Wait() 
 end
+local client = game.Players.LocalPlayer
+local GUI = client.PlayerGui.MainGui
+while GUI:FindFirstChild("LoadingScreenGui∙") or not GUI:FindFirstChild("MainGui") do
+    wait()
+end
 
 local workspace = game:GetService("Workspace")
-local players = game:GetService("Players")
-local client = players.LocalPlayer
 local mouse = client:GetMouse()
 local camera = workspace.CurrentCamera
 
-local clientValues = client.PlayerGui.MainGui.Values
-local clientEvents = client.PlayerGui.MainGui.Events
+local clientValues = GUI.MainGui.Values
+local clientEvents = GUI.MainGui.Events
 local clientColor = clientValues.PaintColor
 local clientMaterial = clientValues.PaintMaterial
 local dragging = false
