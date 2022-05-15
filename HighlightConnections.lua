@@ -1,3 +1,8 @@
+if game.PlaceId ~= 6609611538 then return end
+if not game:IsLoaded() then
+    game.Loaded:Wait() 
+end
+
 local client = game.Players.LocalPlayer
 local values = client.PlayerGui.MainGui.Values
 local currentBlock = values.SelectedObject
