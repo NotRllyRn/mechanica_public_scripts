@@ -2,10 +2,16 @@ if game.PlaceId ~= 6609611538 then return end
 if not game:IsLoaded() then
     game.Loaded:Wait() 
 end
+local client = game.Players.LocalPlayer
+local GUI = client.PlayerGui.MainGui
+while GUI:FindFirstChild("LoadingScreenGui∙") or not GUI:FindFirstChild("MainGui") do
+    wait()
+end
 
 local function calculateMaxLength(Model)
 	local Size = Model:GetExtentsSize()
 	local Max = math.max(Size.X, Size.Y, Size.Z)
+
 	return Max / 2
 end
 
@@ -21,6 +27,8 @@ local function getPartClosestToTop(Model)
 	local distance = 1000
 	local part
 
+	local list = {}
+
 	local middle = Model:GetPivot()
 	local sizeY = Model:GetExtentsSize().Y
 	local top = middle * Vector3.new(0, sizeY / 2, 0)
@@ -29,12 +37,17 @@ local function getPartClosestToTop(Model)
 		if BlockPart then
 			local dis = BlockPart.Position - top
 
+			table.insert(list, dis.Magnitude)
+
 			if dis.Magnitude < distance and BlockPart then
 				part = BlockPart
 				distance = dis.Magnitude
 			end
 		end
 	end
+
+	table.sort(list)
+	print(table.concat(list, " "))
 
 	return part
 end
@@ -71,10 +84,8 @@ local function FlipCreation(Model)
 	end
 end
 
-local client = game.Players.LocalPlayer
 local creations = workspace.Creations
 
-local GUI = client.PlayerGui.MainGui
 local Spawned = GUI.Values.Spawned
 local Frame = GUI.LeftToolbar.ToolbarBackground
 local Button = Instance.new("TextButton")
