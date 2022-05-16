@@ -3,7 +3,7 @@ if not game:IsLoaded() then
     game.Loaded:Wait() 
 end
 local client = game.Players.LocalPlayer
-local GUI = client.PlayerGui.MainGui
+local GUI = client:WaitForChild("PlayerGui")
 while GUI:FindFirstChild("LoadingScreenGui∙") or not GUI:FindFirstChild("MainGui") do
     wait()
 end
