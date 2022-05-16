@@ -8,144 +8,170 @@ while GUI:FindFirstChild("LoadingScreenGui∙") or not GUI:FindFirstChild("MainG
     wait()
 end
 
-local workspace = game:GetService("Workspace")
-local mouse = client:GetMouse()
-local camera = workspace.CurrentCamera
+GUI = GUI.MainGui
+local values = GUI.Values
+local currentBlock = values.SelectedObject
+local HighlightFolder = Instance.new("Folder", workspace.Camera)
 
-local clientValues = GUI.MainGui.Values
-local clientEvents = GUI.MainGui.Events
-local clientColor = clientValues.PaintColor
-local clientMaterial = clientValues.PaintMaterial
-local dragging = false
+local created = {}
+local connections = {}
 
-local ObjectsList = {}
-for _,Object in ipairs(game:GetService("ReplicatedStorage").Objects:GetChildren()) do
-    local id = Object:GetAttribute("ObjectId")
-    ObjectsList[id] = Object
-end
+local setupBlock, setupConnection
 
-local function getAverageSize(part)
-    local size = part:GetExtentsSize()
-    return (size.X + size.Y + size.Z) / 3
-end
-
-local function isOneBlock(part)
-    return part:GetExtentsSize() == ObjectsList[part:GetAttribute("ObjectId")]:GetExtentsSize()
-end
-
-local getParentModel
-function getParentModel(part)
-    local parent = part.Parent
-    if parent.Parent == workspace.Creations[client.Name] then
-        return parent
-    elseif parent:IsDescendantOf(workspace.Creations[client.Name]) then
-        return getParentModel(parent)
-    end
-end
-
-local cooldownList = {}
-local function cooldown(part)
-    if not table.find(cooldownList, part) then
-        coroutine.resume(coroutine.create(function()
-            table.insert(cooldownList, part)
-            while not isOneBlock(part) do
-                wait()
-            end
-            table.remove(cooldownList, table.find(cooldownList, part))
-        end))
-    end
-end
-
-local function RayCastToMouse()
-    if client.Character and mouse.Hit then
-        local params = RaycastParams.new()
-        params.FilterType = Enum.RaycastFilterType.Blacklist
-        params.FilterDescendantsInstances = {client.Character}
-
-        local ray = workspace:Raycast(camera.CFrame.Position, (mouse.Hit.Position - camera.CFrame.Position).Unit * 999)
-        return ray or nil
-    end
-end
-
-local function getPartOnMouse()
-    local mousePosition = mouse.Hit.Position
-    
-    for _, block in ipairs(workspace.Creations[client.Name]:GetChildren()) do
-        local Position = block:GetPivot().Position - mousePosition
-
-        if Position.Magnitude <= getAverageSize(block) + 1 then
-            local rayCast = RayCastToMouse()
-            local whole = isOneBlock(block)
-            local instance = rayCast and getParentModel(rayCast.Instance)
-
-            if (whole and instance == block) then
-                return block
-            end
+local function findConnection(connection)
+    for index, c in ipairs(connections) do
+        if c.Connection == connection then
+            return index
         end
     end
+    return false
 end
 
-local function checkForBaseParts(part)
-    return (part:FindFirstChildWhichIsA("BasePart") and true) or false
+local function checkForConnectionObject(part)
+    for _, c in ipairs(connections) do
+        if c.Part == part then
+            return c
+        end
+    end
+    return false
 end
 
-mouse.Button1Down:Connect(function()
-    dragging = true
+local function create(partName, parented)
+	local instance = Instance.new(partName)
+	if parented ~= nil and typeof(parented) == "Instance" then
+		instance.Parent = parented
+	end
+	table.insert(created, instance)
+	return instance
+end
 
-    if clientValues.SelectedTool.Value == 'Paint' then
-        local block = clientValues.TargetObject.Value
-        if block and not isOneBlock(block) and not table.find(cooldownList, block) then
-            cooldown(block)
-        end
+local function clear()
+    for _, part in ipairs(created) do
+        table.remove(created, table.find(created, part))
+        part:Destroy()
     end
-end)
-
-mouse.Button1Up:Connect(function()
-    dragging = false
-end)
-
-local doPaint
-doPaint = function(block)
-    local block = block 
-    local block1, block2
-
-    if not block then
-        block2 = RayCastToMouse()
-        block2 = block2 and getParentModel(block2.Instance)
-
-        if block2 and not isOneBlock(block2) then
-            block = block2
-        end
-        
-        if not block then
-            block1 = getPartOnMouse()
-
-            if block1 and checkForBaseParts(block1) then
-                block = block1
-            end
-        end
+    for _, c in ipairs(connections) do
+        local position = findConnection(c.Connection)
+        c.Connection:Disconnect()
+        table.remove(connections, position)
     end
+end
 
-    if block then
-        local blockColor = block.Configuration.Color
-        local blockMaterial = block.Configuration.Material
-
-        if (blockColor.Value ~= clientColor.Value) or (blockMaterial.Value ~= clientMaterial.Value) then
-            if not isOneBlock(block) and not table.find(cooldownList, block) then
-                clientEvents.Paint:FireServer(block, clientColor.Value, clientMaterial.Value)
-                cooldown(block)
-                if block1 then
-                    doPaint(block1)
+local getHead
+function getHead(part)
+    if part:FindFirstChild("Head") then
+        return part.Head
+    else
+        local parts = part:GetChildren()
+        if #parts > 0 then
+            for _, v in ipairs(parts) do
+                local head = getHead(v)
+                if head then
+                    return head
                 end
-            elseif isOneBlock(block) then
-                clientEvents.Paint:FireServer(block, clientColor.Value, clientMaterial.Value)
             end
         end
     end
 end
 
-game.RunService.RenderStepped:Connect(function()
-    if dragging and clientValues.SelectedTool.Value == 'Paint' then
-        doPaint()
+local function createDisplay(block, name)
+	local base = create("Part")
+	base.CanCollide = false
+	base.Anchored = true
+	base.Transparency = 1
+	base.CFrame = block:GetPivot()
+
+	local bill = create("BillboardGui", base)
+	bill.Size = UDim2.new(2, 0, 1, 0)
+	bill.AlwaysOnTop = true
+
+	local text = create("TextLabel", bill)
+	text.Size = UDim2.new(1, 0, 1, 0)
+	text.BackgroundTransparency = 1
+	text.TextScaled = true
+	text.TextColor3 = Color3.new(1, 1, 1)
+	text.TextStrokeTransparency = 0
+	text.TextStrokeColor3 = Color3.new(0, 0, 0)
+	text.Text = name
+
+	base.Parent = HighlightFolder
+end
+
+local function createBeam(block1, block2)
+    local block1 = getHead(block1)
+    local block2 = getHead(block2)
+    
+    if not block1 or not block2 then
+        return false
+    end
+    
+	local attachment1 = create("Attachment", block1)
+	local attachment2 = create("Attachment", block2)
+	local beam = create("Beam")
+
+	attachment1.Orientation = Vector3.new(0, 0, 90)
+	attachment2.Orientation = Vector3.new(0, 0, -90)
+
+    beam.Color = ColorSequence.new(Color3.fromRGB(255, 141, 60))
+	beam.Attachment0 = attachment1
+	beam.Attachment1 = attachment2
+	beam.FaceCamera = true
+    beam.Segments = 1000
+    beam.CurveSize0 = 2
+    beam.CurveSize1 = 2
+	beam.Width0 = 0.2
+	beam.Width1 = 0.2
+
+    beam.Parent = HighlightFolder
+    return true
+end
+
+function setupBlock(value)
+    clear()
+
+    if value == nil then
+        return
+    end
+
+    local block1 = value
+    for _, block2 in ipairs(block1.Configuration:GetChildren()) do
+        local customName = block2:GetAttribute("CustomName") or block2.Name
+
+        if block2.ClassName == 'ObjectValue' then
+            setupConnection(block2)
+
+            if block2.Value ~= nil and createBeam(block1, block2.Value) then
+                createDisplay(block2.Value, customName)
+            end
+        end
+    end
+end
+
+function setupConnection(Value)
+    if not checkForConnectionObject(Value) then
+        local connection
+        connection = Value.Changed:Connect(function()
+            if currentBlock.Value then
+                setupBlock(currentBlock.Value)
+            else
+                local position = findConnection(connection)
+                if position then
+                    table.remove(connections, position)
+                    connection:Disconnect() 
+                end
+            end
+        end)
+        table.insert(connections, {
+            Connection = connection,
+            Part = Value
+        })
+    end
+end
+
+currentBlock.Changed:Connect(function(value)
+    if value ~= nil and value:FindFirstChild("Configuration") then
+        setupBlock(value)
+    else
+        clear()
     end
 end)
