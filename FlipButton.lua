@@ -85,7 +85,7 @@ local function FlipCreation(Model)
 end
 
 local creations = workspace.Creations
-
+GUI = GUI.MainGui
 local Spawned = GUI.Values.Spawned
 local Frame = GUI.LeftToolbar.ToolbarBackground
 local Button = Instance.new("TextButton")
