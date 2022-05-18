@@ -87,20 +87,34 @@ end
 local creations = workspace.Creations
 GUI = GUI.MainGui
 local Spawned = GUI.Values.Spawned
-local Frame = GUI.LeftToolbar.ToolbarBackground
-local Button = Instance.new("TextButton")
 
-Button.Size = UDim2.new(1, 0, 0.5, 0)
-Button.Position = UDim2.new(1, 0, 0, 0)
-Button.Text = "Flip"
-Button.Visible = Spawned.Value
-Button.Parent = Frame
+local Flip = Instance.new("TextButton")
+local UICorner = Instance.new("UICorner")
+local UIPadding = Instance.new("UIPadding")
+
+Flip.Parent = GUI.LeftToolbar.ToolbarBackground
+Flip.BackgroundColor3 = Color3.fromRGB(27, 27, 27)
+Flip.Position = UDim2.new(1.084, 0, 0.0416, 0)
+Flip.Size = UDim2.new(0.7307, 0, 0.417, 0)
+Flip.Text = "Flip"
+Flip.TextColor3 = Color3.fromRGB(255, 255, 255)
+Flip.TextScaled = true
+Flip.Visible = Spawned.Value
+
+UICorner.CornerRadius = UDim.new(0.25, 0)
+UICorner.Parent = Flip
+
+UIPadding.Parent = Flip
+UIPadding.PaddingBottom = UDim.new(0.05, 0)
+UIPadding.PaddingLeft = UDim.new(0.1, 0)
+UIPadding.PaddingRight = UDim.new(0.1, 0)
+UIPadding.PaddingTop = UDim.new(0.05, 0)
 
 Spawned.Changed:Connect(function(nValue)
-    Button.Visible = nValue
+    Flip.Visible = nValue
 end)
 
-Button.MouseButton1Click:Connect(function()
+Flip.MouseButton1Click:Connect(function()
     if Spawned.Value then
         FlipCreation(creations[client.Name])
     end
