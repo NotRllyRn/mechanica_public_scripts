@@ -8,6 +8,7 @@ while GUI:FindFirstChild("LoadingScreenGui∙") or not GUI:FindFirstChild("MainG
     wait()
 end
 
+local GUI = GUI.MainGui
 local values = GUI.Values
 local currentBlock = values.SelectedObject
 local HighlightFolder = Instance.new("Folder", workspace.Camera)
