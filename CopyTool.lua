@@ -546,13 +546,14 @@ blocks = (function()
         IsDefaultValue = function(self, ObjectId, Property, Value)
             return (self:DefaultValueOf(ObjectId, Property) == Value)
         end,
-        FindBlockAt = function(self, Position, other)
+        FindBlockAt = function(self, Position,Rotation, other)
             local Position = Position
             if not other then
                Position = clientBounds:GetAbsolutePosition(Position)
             end
             for _, block in ipairs(ClientCreation:GetChildren()) do
-                if block:GetPivot().Position == Position then
+                local pivot = block:GetPivot()
+                if pivot.Position == Position and RadiansToVector3(pivot:ToOrientation()) == Rotation then
                     return block
                 end
             end
@@ -718,7 +719,7 @@ conversion = (function()
                 local ObjectId = value:GetAttribute("ObjectId")
                 local pivot = value:GetPivot()
                 local Position = self:EncodeValue("Vector3", clientBounds:GetRelativePosition(pivot.Position), true)
-                local Rotation = CorrectDegrees(RadiansToVector3(pivot:ToOrientation()))
+                local Rotation = RadiansToVector3(pivot:ToOrientation())
                 Rotation = self:EncodeValue("Rotation", Rotation, true)
 
                 return tostring(ObjectId) .. '*' .. Position .. '*' .. Rotation
@@ -776,6 +777,9 @@ conversion = (function()
             local Key = Key
             if check == nil then
                 Key = valueCodes:GetConfigValueType(Key)
+                if Key == 'KeyCode' then
+                    print(self[Key].Encode(Value))
+                end
             end
             return self[Key].Encode(Value)
         end,
@@ -1325,7 +1329,7 @@ copyService = (function()
                     local ObjectData = { 
                         ObjectId = ObjectId, 
                         Position = clientBounds:GetRelativePosition(Object:GetPivot().Position), 
-                        Rotation = CorrectDegrees(RadiansToVector3(Object:GetPivot():ToOrientation())),
+                        Rotation = RadiansToVector3(Object:GetPivot():ToOrientation()),
                         Configurations = {},
                         Paint = {},
                     }
@@ -1362,7 +1366,7 @@ copyService = (function()
                     if Object:GetAttribute("OriginalRotation") then
                         ObjectData.OriginalRotation = Object:GetAttribute("OriginalRotation")
                     else
-                        ObjectData.OriginalRotation = CorrectDegrees(RadiansToVector3(Object:GetPivot():ToOrientation()))
+                        ObjectData.OriginalRotation = RadiansToVector3(Object:GetPivot():ToOrientation())
                     end
 
                     table.insert(saveData, ObjectData)
@@ -1466,7 +1470,7 @@ pasteService = (function()
 
     workspace.Creations.DescendantAdded:Connect(function(Child)
         if Child.Parent == ClientCreation then
-            local name = tostring(Child:GetPivot().Position)
+            local name = tostring(Child:GetPivot().Position) .. tostring(RadiansToVector3(Child:GetPivot():ToOrientation()))
             if self.Events[name] then
                 self.Events[name]:Fire(Child)
                 self.Events[name] = nil
@@ -1475,12 +1479,20 @@ pasteService = (function()
     end)
 
     local metadata = { __index = {
-        WaitForChildAdd = function(self, Position, func, lastBlock)
+        WaitForChildAdd = function(self, Position,Rotation, func, lastBlock)
             self.blockPlaceCount = self.blockPlaceCount >= RAM.SpeedBlockPlace and 0 or self.blockPlaceCount + 1
             local WaitForBlock = self.blockPlaceCount == 0
 
             local Event = Instance.new("BindableEvent")
-            self.Events[tostring(Position)] = Event
+            local name = tostring(Position) .. tostring(Rotation)
+            self.Events[name] = Event
+
+            task.spawn(function()
+                wait(20)
+                if self.Events[name] then
+                    self.Events[name] = nil
+                end
+            end)
 
             if WaitForBlock or lastBlock then
                 local block = Event.Event:Wait()
@@ -1502,12 +1514,14 @@ pasteService = (function()
             local BlockPosition = Vector3.new(round(TP.X), round(TP.Y), round(TP.Z))
             local BlockRotation = BlockData.Rotation
 
-            if not clientBounds:GetPartAt(BlockData.Position) then
-                build:FireServer(BlockId, BlockPosition, BlockRotation) 
+            build:FireServer(BlockId, BlockPosition, BlockRotation) 
 
-                self:WaitForChildAdd(BlockPosition, func, lastBlock)
+            if not lastBlock and clientBounds:GetPartAt(BlockData.Position) then
+                task.spawn(function()
+                    self:WaitForChildAdd(BlockPosition,BlockRotation, func, lastBlock)
+                end)
             else
-                return false
+                self:WaitForChildAdd(BlockPosition,BlockRotation, func, lastBlock)
             end
         end,
         ConfigureBlock = function(self, Block, BlockData)
@@ -1517,33 +1531,38 @@ pasteService = (function()
                 local ConfigurationValue = ConfigData.value
 
                 if ConfigurationValue ~= nil and typeof(ConfigurationValue) == "table" then
-                    local pivot = CFrame.new(ConfigurationValue.Position) * CFrame.Angles(Vector3ToRadians(ConfigurationValue.Rotation))
+                    local pivot = CFrame.new(ConfigurationValue.Position) * CFrame.fromEulerAnglesYXZ(Vector3ToRadians(ConfigurationValue.Rotation))
 
-                    local angle = CFrame.Angles(Vector3ToRadians(BlockData.OriginalRotation))
+                    local angle = CFrame.fromEulerAnglesYXZ(Vector3ToRadians(BlockData.OriginalRotation))
                     local OriginalCFrame = CFrame.new(BlockData.OriginalPosition) * angle
                     local Offset = OriginalCFrame:ToObjectSpace(pivot)
-                    local BlockPosition = (Block:GetPivot() * Offset)
-                    BlockPosition = Vector3.new(round(BlockPosition.X), round(BlockPosition.Y), round(BlockPosition.Z))
+                    local BlockCFrame = (Block:GetPivot() * Offset)
+                    local BlockPosition = Vector3.new(round(BlockCFrame.X), round(BlockCFrame.Y), round(BlockCFrame.Z))
+                    local BlockRotation = RadiansToVector3(BlockCFrame:ToOrientation())
 
-                    local block = blocks:FindBlockAt(BlockPosition, true)
+                    local block = blocks:FindBlockAt(BlockPosition,BlockRotation, true)
                     if block and block:GetAttribute("ObjectId") == ConfigurationValue.ObjectId then
                         BlockData.Configurations[index].value = block
+                        ConfigurationValue = block
                     else
-                        block = blocks:FindBlockAt(pivot.Position, true)
+                        block = blocks:FindBlockAt(pivot.Position,ConfigurationValue.Rotation, true)
                         if block and block:GetAttribute("ObjectId") == ConfigurationValue.ObjectId then
                             BlockData.Configurations[index].value = block
+                            ConfigurationValue = block
                         end
                     end
                 elseif ConfigurationValue ~= nil and typeof(ConfigurationValue) == "Instance" then
-                    local angle = CFrame.Angles(Vector3ToRadians(BlockData.OriginalRotation))
+                    local angle = CFrame.fromEulerAnglesYXZ(Vector3ToRadians(BlockData.OriginalRotation))
                     local OriginalCFrame = CFrame.new(BlockData.OriginalPosition) * angle
                     local Offset = OriginalCFrame:ToObjectSpace(ConfigurationValue:GetPivot())
-                    local BlockPosition = (Block:GetPivot() * Offset)
-                    BlockPosition = Vector3.new(round(BlockPosition.X), round(BlockPosition.Y), round(BlockPosition.Z))
+                    local BlockCFrame = (Block:GetPivot() * Offset)
+                    local BlockPosition = Vector3.new(round(BlockCFrame.X), round(BlockCFrame.Y), round(BlockCFrame.Z))
+                    local BlockRotation = RadiansToVector3(BlockCFrame:ToOrientation())
 
-                    local block = blocks:FindBlockAt(BlockPosition, true)
+                    local block = blocks:FindBlockAt(BlockPosition,BlockRotation, true)
                     if block and block:GetAttribute("ObjectId") == ConfigurationValue:GetAttribute("ObjectId") then
                         BlockData.Configurations[index].value = block
+                        ConfigurationValue = block
                     end
                 elseif ConfigurationValue ~= nil then
                     BlockData.Configurations[index].value = ConfigurationValue
@@ -1567,7 +1586,7 @@ pasteService = (function()
             for index, BlockData in ipairs(PastingData) do
                 self:PlaceBlock(BlockData, function(Block)
                     table.insert(self.PlacedBlocks, { Block = Block, BlockData = BlockData })
-                end, index == #PastingData)
+                end, index > #PastingData - 20)
                 GUI.ChangeStatus("" .. #self.PlacedBlocks .. "/" .. #PastingData .. " Blocks pasted")
             end
 
@@ -1585,7 +1604,7 @@ pasteService = (function()
 end)()
 
 RadiansToVector3 = function(x, y, z)
-    return Vector3.new(round(math.deg(x)), round(math.deg(y)), round(math.deg(z)))
+    return CorrectDegrees(Vector3.new(round(math.deg(x)), round(math.deg(y)), round(math.deg(z))))
 end
 Vector3ToRadians = function(Vector)
     return math.rad(Vector.X), math.rad(Vector.Y), math.rad(Vector.Z)
@@ -1614,13 +1633,19 @@ CorrectDegrees = function(v)
     local Y = v.Y
     local Z = v.Z
 
-    if X == 360 or X == -360 then
+    if X == -180 then
+        X = 180
+    elseif X == 360 or X == -360 then
         X = 0
     end
-    if Y == 360 or Y == -360 then
+    if Y == -180 then
+        Y = 180
+    elseif Y == 360 or Y == -360 then
         Y = 0
     end
-    if Z == 360 or Z == -360 then
+    if Z == -180 then
+        Z = 180
+    elseif Z == 360 or Z == -360 then
         Z = 0
     end
 
