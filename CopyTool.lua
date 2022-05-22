@@ -721,10 +721,10 @@ conversion = (function()
                 local Rotation = CorrectDegrees(RadiansToVector3(pivot:ToOrientation()))
                 Rotation = self:EncodeValue("Rotation", Rotation, true)
 
-                return tostring(ObjectId) .. '-' .. Position .. '-' .. Rotation
+                return tostring(ObjectId) .. '*' .. Position .. '*' .. Rotation
             end,
             Decode = function(value)
-                local ObjectId, Position, Rotation = table.unpack(string.split(value, "-"))
+                local ObjectId, Position, Rotation = table.unpack(string.split(value, "*"))
                 local tempPosition = clientBounds:GetAbsolutePosition(Vector3.new(table.unpack(string.split(Position, ","))))
                 local tempRotation = self:DecodeValue("Rotation", Rotation)
 
@@ -761,7 +761,7 @@ conversion = (function()
                 return string.format('%d,%d,%d', x, y, z)
             end,
             Decode = function(value)
-                if string.len(value) < 3 then
+                if string.len(value) < 3 and tonumber(value) then
                     local num = tonumber(value) * 90
                     return Vector3.new(num, num, num)
                 end
