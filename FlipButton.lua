@@ -24,14 +24,6 @@ local function create()
     return part
 end
 
-local function round(n)
-    return math.floor(n + 0.5)
-end
-
-local function radiansToVector(x, y, z)
-    return Vector3.new(round(math.deg(x)), round(math.deg(y)), round(math.deg(z)))
-end
-
 local function getNeigboringBlocks(block, Search, Searched)
     local point = block:GetPivot().Position
     local neigboring = {}
