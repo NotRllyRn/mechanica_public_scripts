@@ -8,11 +8,85 @@ while GUI:FindFirstChild("LoadingScreenGui∙") or not GUI:FindFirstChild("MainG
     wait()
 end
 
-local function calculateMaxLength(Model)
-	local Size = Model:GetExtentsSize()
-	local Max = math.max(Size.X, Size.Y, Size.Z)
+local client = game.Players.LocalPlayer
+local Creations = workspace.Creations
 
-	return Max / 2
+local function create()
+    local part = Instance.new("Part")
+    part.Anchored = true
+    part.CanCollide = false
+    part.Parent = workspace
+    part.Size = Vector3.new(2, 2, 2)
+    task.spawn(function()
+        wait(3)
+        part:Destroy()
+    end)
+    return part
+end
+
+local function round(n)
+    return math.floor(n + 0.5)
+end
+
+local function radiansToVector(x, y, z)
+    return Vector3.new(round(math.deg(x)), round(math.deg(y)), round(math.deg(z)))
+end
+
+local function getNeigboringBlocks(block, Search, Searched)
+    local point = block:GetPivot().Position
+    local neigboring = {}
+
+    for _, block in ipairs(Search) do
+        local blockSize = block:GetExtentsSize()
+        local AverageSize = (blockSize.X + blockSize.Y + blockSize.Z) / 3
+        local distance = round(math.abs((block:GetPivot().Position - point).magnitude))
+        print(distance)
+        if distance <= 2.5 and not table.find(Searched, block) then
+            table.insert(neigboring, block)
+        end
+    end
+
+    return neigboring
+end
+
+local groupArea
+function groupArea(block, Searched, blocksFound, Searching)
+    local newBlocks = getNeigboringBlocks(block, Searching, Searched)
+
+    for _, newBlock in ipairs(newBlocks) do
+        if not table.find(Searched, newBlock) then
+            table.insert(Searched, newBlock)
+            table.insert(blocksFound, newBlock)
+            groupArea(newBlock, Searched, blocksFound, Searching)
+        end
+    end
+end
+
+local function groupAll()
+    local Searching = Creations[client.Name]:GetChildren()
+    local Searched = {}
+    local Groups = {}
+
+    print("Searching: " .. #Searching)
+
+    while #Searching ~= 0 do
+        local model = Instance.new("Model")
+        
+        local SearchBlock = Searching[math.random(1, #Searching)]
+        local newBlocks = {}
+        table.insert(Searched, SearchBlock)
+        table.insert(newBlocks, SearchBlock)
+
+        groupArea(SearchBlock, Searched, newBlocks, Searching)
+        for _, newBlock in ipairs(newBlocks) do
+            newBlock:Clone().Parent = model
+            table.remove(Searching, table.find(Searching, newBlock))
+        end
+
+        table.insert(Groups, model)
+    end
+
+    return Groups
 end
 
 local function getAvailableBasePart(Part)
@@ -23,68 +97,66 @@ local function getAvailableBasePart(Part)
 	end
 end
 
-local function getPartClosestToTop(Model)
-	local distance = 1000
-	local part
+local function getTopMostBlock(Model)
+    local middle = Model:GetPivot().Position
+    local YSize = Model:GetExtentsSize().Y
+    local top = middle + Vector3.new(0, YSize / 2, 0)
 
-	local list = {}
+    local block
+    local distance = 1000
+    for _,v in ipairs(Creations[client.Name]:GetChildren()) do
+        local part = getAvailableBasePart(v)
+        local newDistance = part and (part.CFrame.Position - top).magnitude
+        if newDistance and newDistance < distance then
+            distance = newDistance
+            block = part
+        end
+    end
 
-	local middle = Model:GetPivot()
-	local sizeY = Model:GetExtentsSize().Y
-	local top = middle * Vector3.new(0, sizeY / 2, 0)
-	for _, Block in ipairs(Model:GetChildren()) do
-		local BlockPart = getAvailableBasePart(Block)
-		if BlockPart then
-			local dis = BlockPart.Position - top
+    return block 
+end
 
-			table.insert(list, dis.Magnitude)
-
-			if dis.Magnitude < distance and BlockPart then
-				part = BlockPart
-				distance = dis.Magnitude
-			end
-		end
-	end
-
-	table.sort(list)
-	print(table.concat(list, " "))
-
-	return part
+local function calculateMaxLength(Model)
+    local modelSize = Model:GetExtentsSize()
+    return math.max(modelSize.X, modelSize.Y, modelSize.Z)
 end
 
 local function addToPart(part, Model)
-	local Max = calculateMaxLength(Model)
+    task.spawn(function()
+        local Max = calculateMaxLength(Model)
 
-	local Body = Instance.new("BodyPosition")
-	local Gyro = Instance.new("BodyGyro")
-	Gyro.CFrame = part.CFrame
-	Gyro.MaxTorque = Vector3.new(40000, 40000, 40000)
-	Body.MaxForce = Vector3.new(9000000000, 9000000000, 9000000000)
-	Body.Position = part.CFrame.Position + Vector3.new(0, (7.5 + Max) / 1.5, 0)
-	Body.Parent = part
-	Gyro.Parent = part
+        local Body = Instance.new("BodyPosition")
+        local Gyro = Instance.new("BodyGyro")
+        Gyro.CFrame = part.CFrame
+        Gyro.MaxTorque = Vector3.new(40000, 40000, 40000)
+        Body.MaxForce = Vector3.new(9000000000, 9000000000, 9000000000)
+        Body.Position = part.CFrame.Position + Vector3.new(0, (7.5 + Max) / 1.5, 0)
+        Body.Parent = part
+        Gyro.Parent = part
 
-	wait(0.1)
+        wait(0.1)
 
-	Gyro.CFrame = CFrame.new()
+        Gyro.CFrame = CFrame.new()
 
-	wait(2.4)
+        wait(2.4)
 
-	Body:Destroy()
-	Gyro:Destroy()
+        Body:Destroy()
+        Gyro:Destroy()
+    end)
 end
 
-local function FlipCreation(Model)
-	if not Model then
-		return
-	end
-	local part = getPartClosestToTop(Model)
-	if part then
-		addToPart(part, Model)
-	end
+local function FlipCreation()
+    local groups = groupAll()
+    for _,v in ipairs(groups) do
+        local Part = getTopMostBlock(v)
+        if Part then
+            addToPart(Part, v)
+        end
+
+        v:Destroy()
+    end
 end
 
-local creations = workspace.Creations
 GUI = GUI.MainGui
 local Spawned = GUI.Values.Spawned
 
@@ -116,7 +188,6 @@ end)
 
 Flip.MouseButton1Click:Connect(function()
     if Spawned.Value then
-        FlipCreation(creations[client.Name])
+        FlipCreation()
     end
 end)
-
