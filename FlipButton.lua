@@ -79,7 +79,10 @@ local function groupAll()
             table.remove(Searching, table.find(Searching, newBlock))
         end
 
-        table.insert(Groups, model)
+        table.insert(Groups, {
+            Model = model,
+            Blocks = newBlocks
+        })
     end
 
     return Groups
@@ -93,14 +96,15 @@ local function getAvailableBasePart(Part)
 	end
 end
 
-local function getTopMostBlock(Model)
+local function getTopMostBlock(group)
+    local Model = group.Model
     local middle = Model:GetPivot().Position
     local YSize = Model:GetExtentsSize().Y
     local top = middle + Vector3.new(0, YSize / 2, 0)
 
     local block
     local distance = 1000
-    for _,v in ipairs(Creations[client.Name]:GetChildren()) do
+    for _,v in ipairs(group.Blocks) do
         local part = getAvailableBasePart(v)
         local newDistance = part and (part.CFrame.Position - top).magnitude
         if newDistance and newDistance < distance then
@@ -112,15 +116,15 @@ local function getTopMostBlock(Model)
     return block 
 end
 
-local function calculateMaxLength(Model)
+local function getMaxLength(Model)
     local modelSize = Model:GetExtentsSize()
     return math.max(modelSize.X, modelSize.Y, modelSize.Z)
 end
 
-local function addToPart(part, Model)
+local function addToPart(part, group)
     task.spawn(function()
         pcall(function()
-            local Max = calculateMaxLength(Model)
+            local Max = getMaxLength(group.Model)
 
             local Body = Instance.new("BodyPosition")
             local Gyro = Instance.new("BodyGyro")
@@ -151,7 +155,7 @@ local function FlipCreation()
             addToPart(Part, v)
         end
 
-        v:Destroy()
+        v.Model:Destroy()
     end
 end
 
