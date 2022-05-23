@@ -28,7 +28,6 @@ local function round(n)
     return math.floor(n + 0.5)
 end
 
-
 local function getNeigboringBlocks(block, Search, Searched)
     local point = block:GetPivot().Position
     local neigboring = {}
