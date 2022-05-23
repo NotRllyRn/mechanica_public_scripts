@@ -686,6 +686,8 @@ conversion = (function()
                     return "3"
                 elseif r == 0 and g == 0 and b == 255 then
                     return "4"
+                elseif r == g and g == b then
+                    return self:EncodeValue("number", r, true)
                 end
 
                 r = self:EncodeValue("number", r, true)
@@ -705,6 +707,9 @@ conversion = (function()
                     return Color3.new(0, 1, 0)
                 elseif value == "4" then
                     return Color3.new(0, 0, 1)
+                elseif string.len(value) < 4 then
+                    local a = self:DecodeValue("number", value)
+                    return Color3.fromRGB(a, a, a)
                 end
                 local r, g, b = table.unpack(string.split(value, ","))
 
@@ -931,6 +936,7 @@ selectionService = (function()
                 local BlockCFrame = Block:GetBoundingBox()
     
                 local HighlightBlock = Instance.new("Part")
+                HighlightBlock.Material = "Plastic"
                 HighlightBlock.Size = BlockSize
                 HighlightBlock.CFrame = BlockCFrame
                 HighlightBlock.Anchored = true
@@ -1008,6 +1014,7 @@ modelService = (function()
     end)()
 
     local PrimaryPart = Instance.new("Part")
+    PrimaryPart.Material = "Plastic"
     PrimaryPart.Name = "PrimaryPart"
     PrimaryPart.CanCollide = false
     PrimaryPart.Anchored = true
@@ -1078,7 +1085,6 @@ modelService = (function()
             Primary.Anchored = true
             Primary.Transparency = 1
             Primary.CFrame = WorldCFrame
-            Primary.Name = "_SKIP_"
 
             if #BlockData.Paint > 0 then
                 local Color, Material
@@ -1166,6 +1172,7 @@ modelService = (function()
             ModelPreview.Name = "ModelPreview"
 
             PrimaryPart = Instance.new("Part")
+            PrimaryPart.Material = "Plastic"
             PrimaryPart.Name = "PrimaryPart"
             PrimaryPart.Anchored = true
             PrimaryPart.CanCollide = false
