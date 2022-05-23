@@ -119,25 +119,27 @@ end
 
 local function addToPart(part, Model)
     task.spawn(function()
-        local Max = calculateMaxLength(Model)
+        pcall(function()
+            local Max = calculateMaxLength(Model)
 
-        local Body = Instance.new("BodyPosition")
-        local Gyro = Instance.new("BodyGyro")
-        Gyro.CFrame = part.CFrame
-        Gyro.MaxTorque = Vector3.new(40000, 40000, 40000)
-        Body.MaxForce = Vector3.new(9000000000, 9000000000, 9000000000)
-        Body.Position = part.CFrame.Position + Vector3.new(0, (7.5 + Max) / 1.5, 0)
-        Body.Parent = part
-        Gyro.Parent = part
+            local Body = Instance.new("BodyPosition")
+            local Gyro = Instance.new("BodyGyro")
+            Gyro.CFrame = part.CFrame
+            Gyro.MaxTorque = Vector3.new(40000, 40000, 40000)
+            Body.MaxForce = Vector3.new(9000000000, 9000000000, 9000000000)
+            Body.Position = part.CFrame.Position + Vector3.new(0, (7.5 + Max) / 1.5, 0)
+            Body.Parent = part
+            Gyro.Parent = part
 
-        wait(0.1)
+            wait(0.1)
 
-        Gyro.CFrame = CFrame.new()
+            Gyro.CFrame = CFrame.new()
 
-        wait(2.4)
-
-        Body:Destroy()
-        Gyro:Destroy()
+            wait(2.4)
+            
+            Body:Destroy()
+            Gyro:Destroy()
+        end)
     end)
 end
 
