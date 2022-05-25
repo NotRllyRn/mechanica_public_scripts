@@ -28,6 +28,21 @@ local function round(n)
     return math.floor(n + 0.5)
 end
 
+local function getAvailableBasePart(Part)
+	for _, part in ipairs(Part:GetDescendants()) do
+		if part:IsA("BasePart") then
+			return part
+		end
+	end
+end
+
+local function getCFrame(Model)
+    local ModelChildren = Model:GetChildren()
+    local randomBlock = ModelChildren[math.random(1, #ModelChildren)]
+
+    return randomBlock:GetPivot():ToEulerAnglesXYZ()
+end
+
 local function getNeigboringBlocks(block, Search, Searched)
     local point = block:GetPivot().Position
     local neigboring = {}
@@ -35,8 +50,7 @@ local function getNeigboringBlocks(block, Search, Searched)
     for _, block in ipairs(Search) do
         local blockSize = block:GetExtentsSize()
         local AverageSize = (blockSize.X + blockSize.Y + blockSize.Z) / 3
-        local distance = round(math.abs((block:GetPivot().Position - point).magnitude))
-        print(distance)
+        local distance = math.abs((block:GetPivot().Position - point).magnitude)
         if distance <= 2.5 and not table.find(Searched, block) then
             table.insert(neigboring, block)
         end
@@ -63,9 +77,10 @@ local function groupAll()
     local Searched = {}
     local Groups = {}
 
-    print("Searching: " .. #Searching)
+    --print("Searching: " .. #Searching)
 
     while #Searching ~= 0 do
+        wait()
         local model = Instance.new("Model")
         
         local SearchBlock = Searching[math.random(1, #Searching)]
@@ -79,6 +94,8 @@ local function groupAll()
             table.remove(Searching, table.find(Searching, newBlock))
         end
 
+        --print("Found:", #newBlocks, "Blocks. Left: ", #Searching)
+
         table.insert(Groups, {
             Model = model,
             Blocks = newBlocks
@@ -86,14 +103,6 @@ local function groupAll()
     end
 
     return Groups
-end
-
-local function getAvailableBasePart(Part)
-	for _, part in ipairs(Part:GetDescendants()) do
-		if part:IsA("BasePart") then
-			return part
-		end
-	end
 end
 
 local function getTopMostBlock(group)
@@ -148,7 +157,10 @@ local function addToPart(part, group)
 end
 
 local function FlipCreation()
+    --print("Flipping in 5 seconds")
+    --wait(5)
     local groups = groupAll()
+    --print("Grouped")
     for _,v in ipairs(groups) do
         local Part = getTopMostBlock(v)
         if Part then
