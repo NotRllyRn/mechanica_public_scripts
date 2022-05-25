@@ -338,7 +338,7 @@ local GUI = (function()
     TextLabel.Position = UDim2.new(0.018, 0, 1, 0)
     TextLabel.Size = UDim2.new(0.981, 0, 0.22, 0)
     TextLabel.ZIndex = -1
-    TextLabel.Text = "Click and drag to select blocks. Shift+V to paste."
+    TextLabel.Text = "Click and drag to select blocks. Shift+C to copy. Shift+V to paste."
     TextLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
     TextLabel.TextScaled = true
     TextLabel.ZIndex = -999999
@@ -1473,7 +1473,7 @@ stringService = (function()
 end)()
 
 pasteService = (function()
-    local self = { Events = {}, PlacedBlocks = {}, blockPlaceCount = 0 }
+    local self = { Events = {}, PlacedBlocks = {}, blockPlaceCount = 0, Placing = false }
 
     workspace.Creations.DescendantAdded:Connect(function(Child)
         if Child.Parent == ClientCreation then
@@ -1494,21 +1494,47 @@ pasteService = (function()
             local name = tostring(Position) .. tostring(Rotation)
             self.Events[name] = Event
 
+            local continue1 = false
+            local blockFound = false
+
             task.spawn(function()
-                wait(20)
+                wait(2)
+                continue1 = true
+            end)
+
+            local connection
+            connection = Event.Event:Connect(function(block)
+                blockFound = block
+            end)
+
+            local main = function()
+                while true do
+                    if continue1 then
+                        break
+                    elseif blockFound then
+                        break
+                    elseif not self.Placing then
+                        break
+                    end
+
+                    wait()
+                end
+
+                connection:Disconnect()
+
+                if blockFound then
+                    func(blockFound)
+                end
+
                 if self.Events[name] then
                     self.Events[name] = nil
                 end
-            end)
+            end
 
-            if WaitForBlock or lastBlock then
-                local block = Event.Event:Wait()
-                func(block)
+            if not WaitForBlock and not lastBlock then
+                task.spawn(main)
             else
-                task.spawn(function()
-                    local block = Event.Event:Wait()
-                    func(block)
-                end)
+                main()
             end
 
             if lastBlock then
@@ -1589,20 +1615,30 @@ pasteService = (function()
         end,
         PasteData = function(self, PastingData)
             self.PlacedBlocks = {}
+            self.Placing = true
 
             for index, BlockData in ipairs(PastingData) do
-                self:PlaceBlock(BlockData, function(Block)
-                    table.insert(self.PlacedBlocks, { Block = Block, BlockData = BlockData })
-                end, index > #PastingData - 20)
-                GUI.ChangeStatus("" .. #self.PlacedBlocks .. "/" .. #PastingData .. " Blocks pasted")
+                if self.Placing then
+                    self:PlaceBlock(BlockData, function(Block)
+                        table.insert(self.PlacedBlocks, { Block = Block, BlockData = BlockData })
+                    end, index > #PastingData - 20)
+                    GUI.ChangeStatus("" .. #self.PlacedBlocks .. "/" .. #PastingData .. " Blocks pasted")
+                end
             end
 
-            for _, Block in ipairs(self.PlacedBlocks) do
-                self:ConfigureBlock(Block.Block, Block.BlockData)
+            if self.Placing then
+                for _, Block in ipairs(self.PlacedBlocks) do
+                    self:ConfigureBlock(Block.Block, Block.BlockData)
+                end
             end
 
-            GUI.ChangeStatus("Pasted " .. #self.PlacedBlocks .. " blocks.", 2)
+            if self.Placing then
+                GUI.ChangeStatus("Pasted " .. #self.PlacedBlocks .. " blocks.", 2)
+            else
+                GUI.ChangeStatus("Paste cancelled.", 2)
+            end
             GUI.SetPerm("Copying")
+            self.Placing = false
         end,
     }}
 
@@ -1775,6 +1811,8 @@ local PasteFunction = function()
 
             modelService:CreateModel(copyService.CurrentSaveTable)
         else
+            pasteService.Placing = false
+
             GUI.SetPerm("Copying")
             modelService:ClearModel()
         end
