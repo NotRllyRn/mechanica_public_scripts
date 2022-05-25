@@ -1656,9 +1656,9 @@ CorrectDegrees = function(v)
         Z = 0
     end
 
-    X = math.floor(X / 90) * 90
-    Y = math.floor(Y / 90) * 90
-    Z = math.floor(Z / 90) * 90
+    X = round(X / 90) * 90
+    Y = round(Y / 90) * 90
+    Z = round(Z / 90) * 90
 
     return Vector3.new(X,Y,Z)
 end
