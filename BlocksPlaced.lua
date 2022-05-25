@@ -37,14 +37,19 @@ local function updateCount()
 end
 
 Creations.DescendantRemoving:Connect(function(child)
-    if child:IsDescendantOf(Creations[Client.Name]) then
+    if child:IsDescendantOf(Creations[Client.Name]) or child.Parent == Creations[Client.Name] then
         updateCount()
     end
 end)
 Creations.DescendantAdded:Connect(function(child)
-    if child:IsDescendantOf(Creations[Client.Name]) then
+    if child:IsDescendantOf(Creations[Client.Name]) or child.Parent == Creations[Client.Name] then
         updateCount()
     end
 end)
 
 updateCount()
+
+while true do
+    wait(1)
+    updateCount()
+end
