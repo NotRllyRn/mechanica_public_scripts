@@ -8,14 +8,14 @@ while PlayerGui:FindFirstChild("LoadingScreenGui∙") or not PlayerGui:FindFirst
     wait()
 end
 
-local defaultTable = { time = 0, start = os.time() }
+local defaultTable = { loaded = 0, time = 0, start = os.time() }
 local saveTable = defaultTable
 pcall(function()
     if isfolder("MechanicaAddons") then
         if isfile("MechanicaAddons/TimePlayed.txt") then
             local played = readfile("MechanicaAddons/TimePlayed.txt")
             if played and tonumber(played) then
-                saveTable = { time = tonumber(played), start = os.time() }
+                saveTable = { loaded = tonumber(played), time = 0, start = os.time() }
             end
         else
             writefile("MechanicaAddons/TimePlayed.txt", "0")
@@ -101,7 +101,7 @@ game.Players.PlayerRemoving:Connect(function(plr)
 end)
 
 while true do
-    saveTable.time = (os.time() - saveTable.start)
+    saveTable.time = (os.time() - saveTable.start) + saveTable.loaded
     Time.Text = numberToTime(saveTable.time)
     wait(1)
 end
