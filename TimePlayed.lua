@@ -79,7 +79,7 @@ Time.ZIndex = 12
 Time.TextColor3 = Color3.fromRGB(200, 200, 200)
 Time.TextScaled = true
 
-UICorner_2.CornerRadius = UDim.new(0.2, 0)
+UICorner_2.CornerRadius = UDim.new(0.5, 0)
 UICorner_2.Parent = Time
 
 Title.Parent = TimePlayed
