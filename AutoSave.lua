@@ -1,3 +1,10 @@
+local incoming = ({...})
+local selfTable = {Name = "Auto Save"}
+selfTable.scriptOn = incoming[1]
+if selfTable.scriptOn == nil then
+    selfTable.scriptOn = true
+end
+
 if game.PlaceId ~= 6609611538 then return end
 if not game:IsLoaded() then
     game.Loaded:Wait() 
@@ -14,8 +21,10 @@ local Save24 = GUI.MainGui.DespawnedUI.SideMenu.SavesBox.Saves["24"]
 local Save24Name = GUI.MainGui.SavingValues["CreationName 24"]
 local Spawned = GUI.MainGui.Values.Spawned
 
-Save24Name.Value = "AUTOSAVE"
-Save24.SaveLoad:FireServer("Load")
+if selfTable.scriptOn then
+    Save24Name.Value = "AUTOSAVE"
+    Save24.SaveLoad:FireServer("Load")
+end
 
 local timeoutTable = {}
 local time = false
@@ -43,16 +52,47 @@ local old
 old = hookmetamethod(game, "__namecall", function(...)
     local self = select(1, ...)
     local namecallmethod = getnamecallmethod()
-    if namecallmethod == "FireServer" and table.find(search, self.Name) then
-        timeout(function()
-            Save24.SaveLoad:FireServer("Save")
-        end)
+    if selfTable.scriptOn and (namecallmethod == "FireServer") then
+        if table.find(search, self.Name) then
+            timeout(function()
+                if selfTable.scriptOn then
+                    Save24.SaveLoad:FireServer("Save")
+                end
+            end)
+        elseif self.Name == "SaveLoad" then
+            local nd2 = select(2, ...)
+            if nd2 == "Save" then
+                timeout(function() end)
+                time = false
+            end
+        end
     end
     return old(...)
 end)
 
+Spawned.Changed:Connect(function()
+    if Spawned.Value and selfTable.scriptOn then
+        Save24.SaveLoad:FireServer("Save")
+        timeout(function() end)
+        time = false
+    end
+end)
+
 game.Players.PlayerRemoving:Connect(function(p)
-    if p == Client and time then
+    if p == Client and time and selfTable.scriptOn then
         Save24.SaveLoad:FireServer("Save")
     end
 end)
+
+selfTable.stop = function()
+    selfTable.scriptOn = false
+end
+selfTable.start = function(first)
+    selfTable.scriptOn = true
+    Save24Name.Value = "AUTOSAVE"
+    if first then
+        Save24.SaveLoad:FireServer("Load")
+    end
+end
+
+return selfTable
