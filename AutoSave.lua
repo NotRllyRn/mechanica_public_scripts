@@ -1,3 +1,50 @@
+local shared = getgenv().MechanicaShared
+if shared then
+    print("Shared found!")
+
+    if not shared.RightGame then
+        return
+    end
+    if not shared.Loaded then
+        shared.LoadedEvent.Event:Wait()
+    end
+else
+    print("Shared not found")
+
+    shared = {
+        RightGame = game.PlaceId == 6609611538,
+        Loaded = false,
+        LoadedEvent = Instance.new("BindableEvent"),
+    }
+    getgenv().MechanicaShared = shared
+    if not shared.RightGame then
+        return
+    end
+    shared.gameLoaded = game:IsLoaded()
+    if not shared.gameLoaded then
+        game.Loaded:Wait() 
+        shared.gameLoaded = true
+    end
+    shared.Client = game:GetService("Players").LocalPlayer
+    shared.PlayerGui = shared.Client:WaitForChild("PlayerGui")
+    while shared.PlayerGui:FindFirstChild("LoadingScreenGui∙") or not shared.PlayerGui:FindFirstChild("MainGui") do
+        wait()
+    end
+    shared.MainGui = shared.PlayerGui.MainGui
+    shared.RenderStepped = game:GetService("RunService").RenderStepped
+    shared.RenderSteppedFunctions = {}
+    shared.BindToRenderStepped = function(self, func)
+        table.insert(self.RenderSteppedFunctions, func)
+    end
+    shared.RenderStepped:Connect(function()
+        for _, func in ipairs(shared.RenderSteppedFunctions) do
+            task.spawn(func)
+        end
+    end)
+    shared.Loaded = true
+    shared.LoadedEvent:Fire()
+end
+
 local incoming = ({...})
 local selfTable = {Name = "Auto Save"}
 selfTable.scriptOn = incoming[1]
@@ -5,21 +52,11 @@ if selfTable.scriptOn == nil then
     selfTable.scriptOn = true
 end
 
-if game.PlaceId ~= 6609611538 then return end
-if not game:IsLoaded() then
-    game.Loaded:Wait() 
-end
-local Client = game.Players.LocalPlayer
-local GUI = Client:WaitForChild("PlayerGui")
-while GUI:FindFirstChild("LoadingScreenGui∙") or not GUI:FindFirstChild("MainGui") do
-    wait()
-end
-
 wait(1)
 
-local Save24 = GUI.MainGui.DespawnedUI.SideMenu.SavesBox.Saves["24"]
-local Save24Name = GUI.MainGui.SavingValues["CreationName 24"]
-local Spawned = GUI.MainGui.Values.Spawned
+local Save24 = shared.MainGui.DespawnedUI.SideMenu.SavesBox.Saves["24"]
+local Save24Name = shared.MainGui.SavingValues["CreationName 24"]
+local Spawned = shared.MainGui.Values.Spawned
 
 if selfTable.scriptOn then
     Save24Name.Value = "AUTOSAVE"
@@ -79,7 +116,7 @@ Spawned.Changed:Connect(function()
 end)
 
 game.Players.PlayerRemoving:Connect(function(p)
-    if p == Client and time and selfTable.scriptOn then
+    if p == shared.Client and time and selfTable.scriptOn then
         Save24.SaveLoad:FireServer("Save")
     end
 end)
