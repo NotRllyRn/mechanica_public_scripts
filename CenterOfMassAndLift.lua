@@ -261,7 +261,11 @@ local LiftMarker = {
     end,
 }
 
+local updating = false
 local updateMarkerPosition = function()
+    if updating then return end
+    updating = true
+    task.wait()
     if Creations:FindFirstChild(Client.Name) and #Creations[Client.Name]:GetChildren() > 0 then
         local COM = GetCenterOfMass(Creations[Client.Name])
         local COL = GetCenterOfLift(Creations[Client.Name])
@@ -279,6 +283,7 @@ local updateMarkerPosition = function()
         MassMarker:Toggle(false)
         LiftMarker:Toggle(false)
     end
+    updating = false
 end
 
 local updateMarkers = function()
@@ -287,29 +292,41 @@ local updateMarkers = function()
     updateMarkerPosition()
 end
 
-shared:BindToRenderStepped(function()
-    if Spawned.Value then
-        if selfTable.scriptOn then
-            updateMarkerPosition()
-        elseif MassMarker.On or LiftMarker.On then
-            MassMarker:Toggle(false)
-            LiftMarker:Toggle(false)
+task.spawn(function()
+    while true do
+        task.wait()
+        if selfTable.scriptOn and Spawned.Value and MassMarker.unSpawned then
+            if selfTable.scriptOn then
+                updateMarkerPosition()
+                task.wait(0.1)
+            elseif MassMarker.On or LiftMarker.On then
+                MassMarker:Toggle(false)
+                LiftMarker:Toggle(false)
+            end
         end
     end
 end)
 
+local adding = false
 workspace.Creations.DescendantAdded:Connect(function(Object)
+    if adding then return end
+    adding = true
     if Object.Parent == workspace.Creations[Client.Name] then
         updateMarkerPosition()
     end
+    adding = false
 end)
+local removing = false
 workspace.Creations.DescendantRemoving:Connect(function(Object)
+    if removing then return end
+    removing = true
     if Object:IsDescendantOf(workspace.Creations[Client.Name]) then
         for i = 1, 10 do
             wait()
             updateMarkerPosition()
         end
     end
+    removing = false
 end)
 
 local function updateText()
