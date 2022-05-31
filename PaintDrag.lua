@@ -46,155 +46,111 @@ else
 end
 
 local incoming = ({...})
-local selfTable = {Name = "Paint Drag"}
+local selfTable = {Name = "Time Played"}
 selfTable.scriptOn = incoming[1]
 if selfTable.scriptOn == nil then
     selfTable.scriptOn = true
 end
 
-local workspace = game:GetService("Workspace")
-local mouse = shared.Client:GetMouse()
-local camera = workspace.CurrentCamera
-
-local clientValues = shared.MainGui.Values
-local clientEvents = shared.MainGui.Events
-local clientColor = clientValues.PaintColor
-local clientMaterial = clientValues.PaintMaterial
-local dragging = false
-
-local ObjectsList = {}
-for _,Object in ipairs(game:GetService("ReplicatedStorage").Objects:GetChildren()) do
-    local id = Object:GetAttribute("ObjectId")
-    ObjectsList[id] = Object
-end
-
-local function getAverageSize(part)
-    local size = part:GetExtentsSize()
-    return (size.X + size.Y + size.Z) / 3
-end
-
-local function isOneBlock(part)
-    return part:GetExtentsSize() == ObjectsList[part:GetAttribute("ObjectId")]:GetExtentsSize()
-end
-
-local getParentModel
-function getParentModel(part)
-    local parent = part.Parent
-    if parent.Parent == workspace.Creations[shared.Client.Name] then
-        return parent
-    elseif parent:IsDescendantOf(workspace.Creations[shared.Client.Name]) then
-        return getParentModel(parent)
-    end
-end
-
-local cooldownList = {}
-local function cooldown(part)
-    if not table.find(cooldownList, part) then
-        coroutine.resume(coroutine.create(function()
-            table.insert(cooldownList, part)
-            while not isOneBlock(part) do
-                wait()
+local defaultTable = { loaded = 0, time = 0, start = os.time() }
+local saveTable = defaultTable
+pcall(function()
+    if isfolder("MechanicaAddons") then
+        if isfile("MechanicaAddons/TimePlayed.txt") then
+            local played = readfile("MechanicaAddons/TimePlayed.txt")
+            if played and tonumber(played) then
+                saveTable = { loaded = tonumber(played), time = 0, start = os.time() }
             end
-            table.remove(cooldownList, table.find(cooldownList, part))
-        end))
-    end
-end
-
-local function RayCastToMouse()
-    if shared.Client.Character and mouse.Hit then
-        local params = RaycastParams.new()
-        params.FilterType = Enum.RaycastFilterType.Blacklist
-        params.FilterDescendantsInstances = {shared.Client.Character}
-
-        local ray = workspace:Raycast(camera.CFrame.Position, (mouse.Hit.Position - camera.CFrame.Position).Unit * 999)
-        return ray or nil
-    end
-end
-
-local function getPartOnMouse()
-    local mousePosition = mouse.Hit.Position
-    
-    for _, block in ipairs(workspace.Creations[shared.Client.Name]:GetChildren()) do
-        local Position = block:GetPivot().Position - mousePosition
-
-        if Position.Magnitude <= getAverageSize(block) + 1 then
-            local rayCast = RayCastToMouse()
-            local whole = isOneBlock(block)
-            local instance = rayCast and getParentModel(rayCast.Instance)
-
-            if (whole and instance == block) then
-                return block
-            end
+        else
+            writefile("MechanicaAddons/TimePlayed.txt", "0")
         end
-    end
-end
-
-local function checkForBaseParts(part)
-    return (part:FindFirstChildWhichIsA("BasePart") and true) or false
-end
-
-mouse.Button1Down:Connect(function()
-    dragging = true
-
-    if clientValues.SelectedTool.Value == 'Paint' then
-        local block = clientValues.TargetObject.Value
-        if block and not isOneBlock(block) and not table.find(cooldownList, block) then
-            cooldown(block)
-        end
+    else
+        makefolder("MechanicaAddons")
+        writefile("MechanicaAddons/TimePlayed.txt", "0") 
     end
 end)
 
-mouse.Button1Up:Connect(function()
-    dragging = false
-end)
-
-local doPaint
-doPaint = function(block)
-    local block = block 
-    local block1, block2
-
-    if not block then
-        block2 = RayCastToMouse()
-        block2 = block2 and getParentModel(block2.Instance)
-
-        if block2 and not isOneBlock(block2) then
-            block = block2
-        end
-        
-        if not block then
-            block1 = getPartOnMouse()
-
-            if block1 and checkForBaseParts(block1) then
-                block = block1
-            end
-        end
+local function numberToTime(time)
+    local days = math.floor(time / 86400)
+    time = time - (days * 86400)
+    local hours = math.floor(time / 3600)
+    time = time - (hours * 3600)
+    local minutes = math.floor(time / 60)
+    time = time - (minutes * 60)
+    local seconds = time
+    local time = {}
+    if days > 0 then
+        table.insert(time, days .. " Days")
     end
-
-    if block then
-        local blockColor = block.Configuration.Color
-        local blockMaterial = block.Configuration.Material
-
-        if (blockColor.Value ~= clientColor.Value) or (blockMaterial.Value ~= clientMaterial.Value) then
-            if not isOneBlock(block) and not table.find(cooldownList, block) then
-                clientEvents.Paint:FireServer(block, clientColor.Value, clientMaterial.Value)
-                cooldown(block)
-                if block1 then
-                    doPaint(block1)
-                end
-            elseif isOneBlock(block) then
-                clientEvents.Paint:FireServer(block, clientColor.Value, clientMaterial.Value)
-            end
-        end
+    if hours > 0 then
+        table.insert(time, hours .. " Hours")
     end
+    if minutes > 0 then
+        table.insert(time, minutes .. " Minutes")
+    end
+    if seconds > 0 then
+        table.insert(time, seconds .. " Seconds")
+    end
+    return table.concat(time, ", ")
 end
 
-shared:BindToRenderStepped(function()
+local TimePlayed = Instance.new("Frame")
+local UICorner = Instance.new("UICorner")
+local Time = Instance.new("TextLabel")
+local UICorner_2 = Instance.new("UICorner")
+local Title = Instance.new("TextLabel")
+
+TimePlayed.Name = "TimePlayed"
+TimePlayed.Parent = shared.MainGui.DespawnedUI.SideMenu.SettingsBox
+TimePlayed.AnchorPoint = Vector2.new(1, 0)
+TimePlayed.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+TimePlayed.BorderSizePixel = 0
+TimePlayed.Position = UDim2.new(0.984, 0, 0.884, 0)
+TimePlayed.Size = UDim2.new(0.6142, 0, 0.094, 0)
+TimePlayed.ZIndex = 11
+
+UICorner.CornerRadius = UDim.new(0.096, 0)
+UICorner.Parent = TimePlayed
+
+Time.Parent = TimePlayed
+Time.Active = true
+Time.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+Time.Position = UDim2.new(0.305, 0, 0.191, 0)
+Time.Size = UDim2.new(0.673, 0, 0.6808, 0)
+Time.ZIndex = 12
+Time.TextColor3 = Color3.fromRGB(200, 200, 200)
+Time.TextScaled = true
+
+UICorner_2.CornerRadius = UDim.new(0.5, 0)
+UICorner_2.Parent = Time
+
+Title.Parent = TimePlayed
+Title.AnchorPoint = Vector2.new(0.5, 0)
+Title.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+Title.BackgroundTransparency = 1
+Title.BorderSizePixel = 0
+Title.Position = UDim2.new(0.1534, 0, 0, 0)
+Title.Size = UDim2.new(0.288, 0, 1, 0)
+Title.ZIndex = 12
+Title.Text = "Time Played:"
+Title.TextColor3 = Color3.fromRGB(200, 200, 200)
+Title.TextScaled = true
+
+game.Players.PlayerRemoving:Connect(function(plr)
     if selfTable.scriptOn then
-        if dragging and clientValues.SelectedTool.Value == 'Paint' then
-            doPaint()
+        if plr == shared.Client then
+            writefile("MechanicaAddons/TimePlayed.txt", tostring(saveTable.time))
         end
     end
 end)
+
+while true do
+    if selfTable.scriptOn then
+        saveTable.time = (os.time() - saveTable.start) + saveTable.loaded
+        Time.Text = numberToTime(saveTable.time)
+    end
+    wait(1)
+end
 
 selfTable.stop = function()
     selfTable.scriptOn = false
