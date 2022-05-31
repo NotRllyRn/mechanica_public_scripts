@@ -1,12 +1,86 @@
-if game.PlaceId ~= 6609611538 then return end
-if not game:IsLoaded() then
-    game.Loaded:Wait() 
+local shared = getgenv().MechanicaShared
+if shared then
+    print("Shared found!")
+
+    if not shared.RightGame then
+        return
+    end
+    if not shared.Loaded then
+        shared.LoadedEvent.Event:Wait()
+    end
+else
+    print("Shared not found")
+
+    shared = {
+        RightGame = game.PlaceId == 6609611538,
+        Loaded = false,
+        LoadedEvent = Instance.new("BindableEvent"),
+    }
+    getgenv().MechanicaShared = shared
+    if not shared.RightGame then
+        return
+    end
+    shared.gameLoaded = game:IsLoaded()
+    if not shared.gameLoaded then
+        game.Loaded:Wait() 
+        shared.gameLoaded = true
+    end
+    shared.Client = game:GetService("Players").LocalPlayer
+    shared.PlayerGui = shared.Client:WaitForChild("PlayerGui")
+    while shared.PlayerGui:FindFirstChild("LoadingScreenGui∙") or not shared.PlayerGui:FindFirstChild("MainGui") do
+        wait()
+    end
+    shared.MainGui = shared.PlayerGui.MainGui
+    shared.RenderStepped = game:GetService("RunService").RenderStepped
+    shared.RenderSteppedFunctions = {}
+    shared.BindToRenderStepped = function(self, func)
+        table.insert(self.RenderSteppedFunctions, func)
+    end
+    shared.RenderStepped:Connect(function()
+        for _, func in ipairs(shared.RenderSteppedFunctions) do
+            task.spawn(func)
+        end
+    end)
+    shared.Loaded = true
+    shared.LoadedEvent:Fire()
 end
-local Client = game.Players.LocalPlayer
-local PlayerGui = Client:WaitForChild("PlayerGui")
-while PlayerGui:FindFirstChild("LoadingScreenGui∙") or not PlayerGui:FindFirstChild("MainGui") do
-    wait()
+
+local incoming = ({...})
+local selfTable = {Name = "Center of Mass and Lift"}
+selfTable.scriptOn = incoming[1]
+if selfTable.scriptOn == nil then
+    selfTable.scriptOn = true
 end
+
+local Client = shared.Client
+
+local ShowMarkerButton = (function()
+    local TextButton = Instance.new("TextButton")
+    local UICorner = Instance.new("UICorner")
+    local UIPadding = Instance.new("UIPadding")
+    
+    TextButton.Parent = shared.MainGui.LeftToolbar.ToolbarBackground
+    TextButton.BackgroundColor3 = Color3.fromRGB(27, 27, 27)
+    TextButton.Position = UDim2.new(0.5, 0, -0.4833, 0)
+    TextButton.Size = UDim2.new(0.7739, 0, 0.4166, 0)
+    TextButton.Text = "Show Markers"
+    TextButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TextButton.TextScaled = true
+    
+    UICorner.CornerRadius = UDim.new(0.25, 0)
+    UICorner.Parent = TextButton
+    
+    UIPadding.Parent = TextButton
+    UIPadding.PaddingBottom = UDim.new(0.05, 0)
+    UIPadding.PaddingLeft = UDim.new(0.1, 0)
+    UIPadding.PaddingRight = UDim.new(0.1, 0)
+    UIPadding.PaddingTop = UDim.new(0.05, 0)
+
+    return TextButton
+end)()
+
+local GUI = shared.MainGui
+local Spawned = GUI.Values.Spawned
 
 local Camera = workspace.Camera
 local directions = {
@@ -99,56 +173,186 @@ end
 
 local Creations = workspace.Creations
 local MassMarker = {
-    On = true,
+    Spawned = false,
+    unSpawned = true,
+    On = not Spawned.Value,
     Model = CreateMarker(Color3.fromRGB(255, 255, 0)),
     PivotTo = function(self, CF)
-        if self.On then
+        local continue1 = Spawned.Value and self.Spawned or not Spawned.Value and self.unSpawned
+
+        if continue1 and self.On ~= true then
+            self.On = true
+            ToggleModel(self.Model, true)
+        end
+
+        if self.On and self.Model:GetPivot() ~= CF then
+            ToggleModel(self.Model, true)
             self.Model:PivotTo(CF)
         end
     end,
     Toggle = function(self, mode)
-        if mode == self.On then
-            self.On = not mode
-            ToggleModel(self.Model, not mode)
+        if not selfTable.scriptOn then
+            if self.On ~= false then
+                self.On = false
+                ToggleModel(self.Model, false)
+            end
+            return
         end
-    end
+
+        if mode == nil then
+            if (Spawned.Value and self.Spawned) and self.On ~= true then
+                self.On = true
+                ToggleModel(self.Model, true)
+            elseif (Spawned.Value and self.unSpawned) and self.On ~= false then
+                self.On = false
+                ToggleModel(self.Model, false)
+            elseif Spawned.Value and self.On ~= false then
+                self.On = false
+                ToggleModel(self.Model, false)
+            end
+        elseif mode ~= self.On then
+            self.On = mode
+            ToggleModel(self.Model, mode)
+        end
+    end,
 }
 local LiftMarker = {
-    On = true,
+    Spawned = false,
+    unSpawned = true,
+    On = not Spawned.Value,
     Model = CreateMarker(Color3.fromRGB(0, 0, 255)),
     PivotTo = function(self, CF)
-        if self.On then
+        local continue1 = Spawned.Value and self.Spawned or not Spawned.Value and self.unSpawned
+
+        if continue1 and self.On ~= true then
+            self.On = true
+            ToggleModel(self.Model, true)
+        end
+
+        if self.On and self.Model:GetPivot() ~= CF then
+            ToggleModel(self.Model, true)
             self.Model:PivotTo(CF)
         end
     end,
     Toggle = function(self, mode)
-        if mode == self.On then
-            self.On = not mode
-            ToggleModel(self.Model, not mode)
+        if not selfTable.scriptOn then
+            if self.On ~= false then
+                self.On = false
+                ToggleModel(self.Model, false)
+            end
+            return
         end
-    end
-}
-local GUI = PlayerGui.MainGui
-local Spawned = GUI.Values.Spawned
 
-game:GetService("RunService").RenderStepped:Connect(function()
-    MassMarker:Toggle(Spawned.Value)
-    LiftMarker:Toggle(Spawned.Value)
-    if not Spawned.Value and Creations:FindFirstChild(Client.Name) and #Creations[Client.Name]:GetChildren() > 0 then
+        if mode == nil then
+            if (Spawned.Value and self.Spawned) and self.On ~= true then
+                self.On = true
+                ToggleModel(self.Model, true)
+            elseif (Spawned.Value and self.unSpawned) and self.On ~= false then
+                self.On = false
+                ToggleModel(self.Model, false)
+            elseif Spawned.Value and self.On ~= false then
+                self.On = false
+                ToggleModel(self.Model, false)
+            end
+        elseif mode ~= self.On then
+            self.On = mode
+            ToggleModel(self.Model, mode)
+        end
+    end,
+}
+
+local updateMarkerPosition = function()
+    if Creations:FindFirstChild(Client.Name) and #Creations[Client.Name]:GetChildren() > 0 then
         local COM = GetCenterOfMass(Creations[Client.Name])
         local COL = GetCenterOfLift(Creations[Client.Name])
         if COM and COM ~= COL then
             MassMarker:PivotTo(CFrame.new(COM))
         else
-            MassMarker:Toggle(true)
+            MassMarker:Toggle(false)
         end
         if COL then
             LiftMarker:PivotTo(CFrame.new(COL))
         else
-            LiftMarker:Toggle(true)
+            LiftMarker:Toggle(false)
         end
     else
-        MassMarker:Toggle(true)
-        LiftMarker:Toggle(true)
+        MassMarker:Toggle(false)
+        LiftMarker:Toggle(false)
+    end
+end
+
+local updateMarkers = function()
+    MassMarker:Toggle(Spawned.Value and MassMarker.Spawned or not Spawned.Value and MassMarker.unSpawned)
+    LiftMarker:Toggle(Spawned.Value and LiftMarker.Spawned or not Spawned.Value and LiftMarker.unSpawned)
+    updateMarkerPosition()
+end
+
+shared:BindToRenderStepped(function()
+    if Spawned.Value then
+        if selfTable.scriptOn then
+            updateMarkerPosition()
+        elseif MassMarker.On or LiftMarker.On then
+            MassMarker:Toggle(false)
+            LiftMarker:Toggle(false)
+        end
     end
 end)
+
+workspace.Creations.DescendantAdded:Connect(function(Object)
+    if Object.Parent == workspace.Creations[Client.Name] then
+        updateMarkerPosition()
+    end
+end)
+workspace.Creations.DescendantRemoving:Connect(function(Object)
+    if Object:IsDescendantOf(workspace.Creations[Client.Name]) then
+        for i = 1, 10 do
+            wait()
+            updateMarkerPosition()
+        end
+    end
+end)
+
+local function updateText()
+    if Spawned.Value and MassMarker.Spawned then
+        ShowMarkerButton.Text = "Hide Markers"
+    elseif not Spawned.Value and MassMarker.unSpawned then
+        ShowMarkerButton.Text = "Hide Markers"
+    else
+        ShowMarkerButton.Text = "Show Markers"
+    end
+end
+
+ShowMarkerButton.MouseButton1Up:Connect(function()
+    if Spawned.Value then
+        MassMarker.Spawned = not MassMarker.Spawned
+        LiftMarker.Spawned = not LiftMarker.Spawned
+    else
+        MassMarker.unSpawned = not MassMarker.unSpawned
+        LiftMarker.unSpawned = not LiftMarker.unSpawned
+    end
+
+    updateMarkers()
+    updateText()
+end)
+
+Spawned.Changed:Connect(function()
+    updateMarkers()
+    updateText()
+end)
+
+task.spawn(function()
+    for i = 1, 100 do
+        wait()
+        updateText()
+        updateMarkers()
+    end
+end)
+
+selfTable.stop = function()
+    selfTable.scriptOn = false
+end
+selfTable.start = function()
+    selfTable.scriptOn = true
+end
+
+return selfTable
