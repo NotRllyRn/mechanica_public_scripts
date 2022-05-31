@@ -1,13 +1,59 @@
-if game.PlaceId ~= 6609611538 then return end
-if not game:IsLoaded() then
-    game.Loaded:Wait() 
+local shared = getgenv().MechanicaShared
+if shared then
+    print("Shared found!")
+
+    if not shared.RightGame then
+        return
+    end
+    if not shared.Loaded then
+        shared.LoadedEvent.Event:Wait()
+    end
+else
+    print("Shared not found")
+
+    shared = {
+        RightGame = game.PlaceId == 6609611538,
+        Loaded = false,
+        LoadedEvent = Instance.new("BindableEvent"),
+    }
+    getgenv().MechanicaShared = shared
+    if not shared.RightGame then
+        return
+    end
+    shared.gameLoaded = game:IsLoaded()
+    if not shared.gameLoaded then
+        game.Loaded:Wait() 
+        shared.gameLoaded = true
+    end
+    shared.Client = game:GetService("Players").LocalPlayer
+    shared.PlayerGui = shared.Client:WaitForChild("PlayerGui")
+    while shared.PlayerGui:FindFirstChild("LoadingScreenGui∙") or not shared.PlayerGui:FindFirstChild("MainGui") do
+        wait()
+    end
+    shared.MainGui = shared.PlayerGui.MainGui
+    shared.RenderStepped = game:GetService("RunService").RenderStepped
+    shared.RenderSteppedFunctions = {}
+    shared.BindToRenderStepped = function(self, func)
+        table.insert(self.RenderSteppedFunctions, func)
+    end
+    shared.RenderStepped:Connect(function()
+        for _, func in ipairs(shared.RenderSteppedFunctions) do
+            task.spawn(func)
+        end
+    end)
+    shared.Loaded = true
+    shared.LoadedEvent:Fire()
 end
-local client = game.Players.LocalPlayer
-local GUI = client:WaitForChild("PlayerGui")
-while GUI:FindFirstChild("LoadingScreenGui∙") or not GUI:FindFirstChild("MainGui") do
-    wait()
+
+local incoming = ({...})
+local selfTable = {Name = "Copy Tool"}
+selfTable.scriptOn = incoming[1]
+if selfTable.scriptOn == nil then
+    selfTable.scriptOn = true
 end
-GUI = GUI.MainGui
+
+local client = shared.Client
+local GUI = shared.MainGui
 
 local ENUM_MATERIALS = {
     [1] = 'Plastic',
@@ -1719,7 +1765,7 @@ getMousePoint = function(v)
 end
 
 mouse.Button1Down:Connect(function()
-    if RAM.CopyTool and not RAM.Placing then
+    if RAM.CopyTool and not RAM.Placing and selfTable.scriptOn then
         RAM.Selecting = true
 
         local Relative = camera.CoordinateFrame:pointToObjectSpace(mouse.Hit.p)
@@ -1727,7 +1773,7 @@ mouse.Button1Down:Connect(function()
         
         RAM.MouseInfo.X = mouse.X
         RAM.MouseInfo.Y = mouse.Y
-    elseif RAM.CopyTool and RAM.Placing then
+    elseif RAM.CopyTool and RAM.Placing and selfTable.scriptOn then
         local data = modelService:GetSaveData()
         if data then
             modelService:ClearModel()
@@ -1738,7 +1784,7 @@ mouse.Button1Down:Connect(function()
 end)
 
 mouse.Move:Connect(function()
-    if not RAM.Placing and RAM.Selecting and RAM.MouseInfo.X and RAM.MouseInfo.Y then
+    if not RAM.Placing and RAM.Selecting and RAM.MouseInfo.X and RAM.MouseInfo.Y and selfTable.scriptOn then
         GUI.Lasso.Size = UDim2.new(0, mouse.X - RAM.MouseInfo.X, 0, mouse.Y - RAM.MouseInfo.Y)
         GUI.Lasso.Position = UDim2.new(0, RAM.MouseInfo.X, 0, RAM.MouseInfo.Y)
     end
@@ -1746,7 +1792,7 @@ mouse.Move:Connect(function()
 end)
 
 mouse.Button1Up:Connect(function()
-    if RAM.CopyTool and RAM.Selecting then
+    if RAM.CopyTool and RAM.Selecting and selfTable.scriptOn then
         RAM.Selecting = false
 
         local Relative = camera.CoordinateFrame:pointToObjectSpace(mouse.Hit.p)
@@ -1774,35 +1820,37 @@ end)
 -- // main part of script
 
 actionService:Bind('1CopyToolShowGui_', function()
-    RAM.CopyTool = not RAM.CopyTool
-    GUI.MainFrame.Visible = RAM.CopyTool
+    if selfTable.scriptOn then
+        RAM.CopyTool = not RAM.CopyTool
+        GUI.MainFrame.Visible = RAM.CopyTool
 
-    GUI.SetPerm("")
-    if RAM.CopyTool then
-        selectionService:HighlightCurrentSelection()
-        if RAM.Placing then
-            GUI.SetPerm("Pasting")
+        GUI.SetPerm("")
+        if RAM.CopyTool then
+            selectionService:HighlightCurrentSelection()
+            if RAM.Placing then
+                GUI.SetPerm("Pasting")
 
-            RAM.Selecting = false
-            if ModelPreview then
-                ModelPreview.Parent = camera
+                RAM.Selecting = false
+                if ModelPreview then
+                    ModelPreview.Parent = camera
+                else
+                    modelService:CreateModel(copyService.CurrentSaveTable)
+                end
             else
-                modelService:CreateModel(copyService.CurrentSaveTable)
+                GUI.SetPerm("Copying")
             end
         else
-            GUI.SetPerm("Copying")
-        end
-    else
-        RAM.Selecting = false
-        selectionService:ClearHighlights()
-        if ModelPreview then
-            ModelPreview.Parent = nil
+            RAM.Selecting = false
+            selectionService:ClearHighlights()
+            if ModelPreview then
+                ModelPreview.Parent = nil
+            end
         end
     end
 end, Enum.KeyCode.Six)
 
 local PasteFunction = function()
-    if RAM.CopyTool then
+    if RAM.CopyTool and selfTable.scriptOn then
         RAM.Placing = not RAM.Placing
 
         if RAM.Placing then
@@ -1820,7 +1868,7 @@ local PasteFunction = function()
 end
 
 local CopyFunction = function()
-    if RAM.CopyTool and not RAM.Placing then
+    if RAM.CopyTool and not RAM.Placing and selfTable.scriptOn then
         copyService:GenerateSaveTable()
         GUI.ChangeStatus("Copied " .. #copyService.CurrentSaveTable .. " blocks.", 2)
     end
@@ -1906,9 +1954,9 @@ local old
 old = hookmetamethod(game, "__namecall", function(...)
     local self = select(1, ...)
     local name = getnamecallmethod()
-    if name == "FireServer" and (self.Name == "DeleteCreation") or (self.Name == "LoadSave") then
+    if name == "FireServer" and ((self.Name == "DeleteCreation") or (self.Name == "SaveLoad")) and selfTable.scriptOn then
         task.spawn(function()
-            selectionService:ClearHighlights(self.Name == "LoadSave")
+            selectionService:ClearHighlights(self.Name == "Load")
             selectionService.CurrentSelection = {}
             GUI.UpdateSelected()
         end)
@@ -1947,3 +1995,14 @@ for i,v in ipairs(MainUi.Tools:GetChildren()) do
         end
     end
 end
+
+selfTable.stop = function()
+    selfTable.scriptOn = false
+    close()
+    pasteService.Placing = false
+end
+selfTable.start = function()
+    selfTable.scriptOn = true
+end
+
+return selfTable
