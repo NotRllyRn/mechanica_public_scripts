@@ -12,7 +12,7 @@ else
     print("Shared not found")
 
     shared = {
-        RightGame = game.PlaceId == 6609611538,
+        RightGame = (game.PlaceId == 6609611538) or (game.PlaceId == 6017780414),
         Loaded = false,
         LoadedEvent = Instance.new("BindableEvent"),
     }
