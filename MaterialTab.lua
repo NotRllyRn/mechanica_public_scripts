@@ -7,46 +7,55 @@ local Materials = {
         Enum = MaterialEnum.Plastic,
         Name = "Plastic",
         ImageId = "9795275324",
+        Color3 = Color3.fromRGB(163, 162, 165),
     },
     SmoothPlastic = {
         Enum = MaterialEnum.SmoothPlastic,
         Name = "Smooth Plastic",
         ImageId = "9795275324",
+        Color3 = Color3.fromRGB(163, 162, 165),
     },
     Brick = {
         Enum = MaterialEnum.Brick,
         Name = "Brick",
         ImageId = "9795275614",
+        Color3 = Color3.fromRGB(196, 40, 28),
     },
     Cobblestone = {
         Enum = MaterialEnum.Cobblestone,
         Name = "Cobblestone",
         ImageId = "9795275969",
+        Color3 = Color3.fromRGB(149, 137, 136),
     },
     Concrete = {
         Enum = MaterialEnum.Concrete,
         Name = "Concrete",
         ImageId = "9795275829",
+        Color3 = Color3.fromRGB(149, 137, 136),
     },
     CorrodedMetal = {
         Enum = MaterialEnum.CorrodedMetal,
         Name = "Corroded Metal",
         ImageId = "5517188355",
+        Color3 = Color3.fromRGB(255, 255, 255),
     },
     DiamondPlate = {
         Enum = MaterialEnum.DiamondPlate,
         Name = "Diamond Plate",
         ImageId = "9795275413",
+        Color3 = Color3.fromRGB(149, 137, 136),
     },
     Fabric = {
         Enum = MaterialEnum.Fabric,
         Name = "Fabric",
         ImageId = "9795275485",
+        Color3 = Color3.fromRGB(149, 137, 136),
     },
     Foil = {
         Enum = MaterialEnum.Foil,
         Name = "Foil",
         ImageId = "1208150225",
+        Color3 = Color3.fromRGB(237, 234, 234),
     },
     ForceField = {
         Enum = MaterialEnum.ForceField,
@@ -61,55 +70,67 @@ local Materials = {
         Enum = MaterialEnum.Granite,
         Name = "Granite",
         ImageId = "9795275643",
+        Color3 = Color3.fromRGB(205, 205, 205),
     },
     Grass = {
         Enum = MaterialEnum.Grass,
         Name = "Grass",
         ImageId = "9795275667",
+        Color3 = Color3.fromRGB(52, 142, 64),
     },
     Ice = {
         Enum = MaterialEnum.Ice,
         Name = "Ice",
-        ImageId = "9795275667",
+        ImageId = "1701531257",
+        Color3 = Color3.fromRGB(163, 162, 165),
     },
     Marble = {
         Enum = MaterialEnum.Marble,
         Name = "Marble",
         ImageId = "9795275566",
+        Color3 = Color3.fromRGB(223, 223, 222),
     },
     Metal = {
         Enum = MaterialEnum.Metal,
         Name = "Metal",
         ImageId = "9795275293",
+        Color3 = Color3.fromRGB(149, 137, 136),
     },
     Neon = {
         Enum = MaterialEnum.Neon,
         Name = "Neon",
+        ImageId = "1701531257",
+        Color3 = Color3.fromRGB(0, 255, 255),
     },
     Pebble = {
         Enum = MaterialEnum.Pebble,
         Name = "Pebble",
         ImageId = "9795275434",
+        Color3 = Color3.fromRGB(149, 137, 136),
     },
     Sand = {
         Enum = MaterialEnum.Sand,
         Name = "Sand",
         ImageId = "9795275572",
+        Color3 = Color3.fromRGB(218, 133, 65),
     },
     Slate = {
         Enum = MaterialEnum.Slate,
         Name = "Slate",
         ImageId = "9795275650",
+        Color3 = Color3.fromRGB(149, 137, 136),
     },
     Wood = {
         Enum = MaterialEnum.Wood,
         Name = "Wood",
         ImageId = "9795275605",
+        Color3 = Color3.fromRGB(143, 76, 42),
     },
     WoodPlanks = {
         Enum = MaterialEnum.WoodPlanks,
         Name = "Wood Planks",
         ImageId = "9795275606",
+        Color3 = Color3.fromRGB(143, 76, 42),
     },
 }
 
@@ -269,6 +290,7 @@ local GUI = (function()
         stop = stop,
         setupButton = function(material)
             local id = (material.ImageId and (material.ImageId ~= "empty") and material.ImageId) or ((material.ImageId ~= "empty") and Materials.Plastic.ImageId) or nil
+            local color = material.Color3 or Materials.Plastic.Color3
 
             local b = Example:Clone()
             if id then
@@ -276,6 +298,7 @@ local GUI = (function()
             else
                 b.Image = ""
             end
+            b.ImageColor3 = color
             b.NameValue.Text = material.Name
             b.Friction.Text = "Friction: " .. tostring(material.Properties.Friction)
             b.Densitiy.Text = "Density: " .. tostring(material.Properties.Density)
