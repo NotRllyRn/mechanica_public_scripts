@@ -36,6 +36,10 @@ old = hookmetamethod(game, "__namecall", function(...)
     return old(...)
 end)
 
+if configMenu:FindFirstChild("ConfigWindow") then
+    configMenu.ConfigWindow.Position = newSize
+end
+
 selfTable.stop = function()
     selfTable.scriptOn = false
     if configMenu:FindFirstChild("ConfigWindow") then
