@@ -1,12 +1,5 @@
-if game.PlaceId ~= 6609611538 then return end
-if not game:IsLoaded() then
-    game.Loaded:Wait() 
-end
-local Client = game.Players.LocalPlayer
-local PlayerGui = Client:WaitForChild("PlayerGui")
-while PlayerGui:FindFirstChild("LoadingScreenGui∙") or not PlayerGui:FindFirstChild("MainGui") do
-    wait()
-end
+local shared, selfTable = loadstring(game:HttpGet("https://raw.githubusercontent.com/NotRllyRn/mechanica_public_scripts/main/loader.lua"))(...)
+selfTable.Name = "Time Played"
 
 local defaultTable = { loaded = 0, time = 0, start = os.time() }
 local saveTable = defaultTable
@@ -56,10 +49,8 @@ local Time = Instance.new("TextLabel")
 local UICorner_2 = Instance.new("UICorner")
 local Title = Instance.new("TextLabel")
 
---Properties:
-
 TimePlayed.Name = "TimePlayed"
-TimePlayed.Parent = PlayerGui.MainGui.DespawnedUI.SideMenu.SettingsBox
+TimePlayed.Parent = shared.MainGui.DespawnedUI.SideMenu.SettingsBox
 TimePlayed.AnchorPoint = Vector2.new(1, 0)
 TimePlayed.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
 TimePlayed.BorderSizePixel = 0
@@ -95,13 +86,26 @@ Title.TextColor3 = Color3.fromRGB(200, 200, 200)
 Title.TextScaled = true
 
 game.Players.PlayerRemoving:Connect(function(plr)
-    if plr == Client then
-        writefile("MechanicaAddons/TimePlayed.txt", tostring(saveTable.time))
-    end 
+    if selfTable.scriptOn then
+        if plr == shared.Client then
+            writefile("MechanicaAddons/TimePlayed.txt", tostring(saveTable.time))
+        end
+    end
 end)
 
 while true do
-    saveTable.time = (os.time() - saveTable.start) + saveTable.loaded
-    Time.Text = numberToTime(saveTable.time)
+    if selfTable.scriptOn then
+        saveTable.time = (os.time() - saveTable.start) + saveTable.loaded
+        Time.Text = numberToTime(saveTable.time)
+    end
     wait(1)
 end
+
+selfTable.stop = function()
+    selfTable.scriptOn = false
+end
+selfTable.start = function()
+    selfTable.scriptOn = true
+end
+
+return selfTable
