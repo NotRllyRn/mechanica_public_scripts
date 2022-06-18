@@ -9,7 +9,7 @@ if shared then
         shared.LoadedEvent.Event:Wait()
     end
 else
-    print("Shared not found")
+    print("Shared not found") 
 
     shared = {
         RightGame = game.PlaceId == 6609611538,
