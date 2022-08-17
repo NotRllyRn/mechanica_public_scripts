@@ -12,40 +12,32 @@ local clearConnections = function(t)
         t[i] = nil
     end
 end
-local apply = function(Changable, color, material)
-    if not color and not material then return end
-    for _, v in ipairs(Changable.Color) do
-        v.Color = color
-    end
-    for _, v in ipairs(Changable.Material) do
+local apply = function(Changable, material)
+    for _, v in ipairs(Changable) do
         v.Material = material
     end
 end
 local setup = function(Model)
     local Output = Model.Output
-    local Changable, oldColor, oldMaterial = { Color = {}, Material = {} }
+    local Changable, oldColor, oldMaterial = {}
     for _, v in ipairs(Model:GetDescendants()) do
-        if v:GetAttribute("ApplyColor") then
-            oldColor = v.Color
-            table.insert(Changable.Color, v)
-        end
         if v:GetAttribute("ApplyMaterial") then
             oldMaterial = v.Material
-            table.insert(Changable.Material, v)
+            table.insert(Changable, v)
         end
     end
 
     local Connections = {}
     local onEnd = function()
         clearConnections(Connections)
-        apply(Changable, oldColor, oldMaterial)
+        apply(Changable, oldMaterial)
     end
     Connections.c1 = Model.Destroying:Connect(onEnd)
     Connections.c3 = Output.Event:Connect(function(v)
         if v and v ~= 0 then
-            apply(Changable, Color3.new(v, v, v), Enum.Material.Neon)
+            apply(Changable, Enum.Material.Neon)
         else
-            apply(Changable, oldColor, oldMaterial)
+            apply(Changable, oldMaterial)
         end
     end)
 end
