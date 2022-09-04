@@ -596,9 +596,9 @@ blocks = (function()
     end
 
     setrawmetatable(self, metadata)
-    return self
+    return self 
 end)()
-
+ 
 conversion = (function()
     local self
     self = {
@@ -1770,6 +1770,11 @@ end)
 
 actionService:Bind('1CopyToolShowGui_', function()
     if selfTable.scriptOn then
+        for _, ToolSelect in pairs(MainUi.DespawnedUI.Toolbar.ToolButtons:GetChildren()) do
+            ToolSelect.SelectionIndicator.BackgroundTransparency = 1
+        end
+        MainUi.Values.SelectedTool.Value = ""
+
         RAM.CopyTool = not RAM.CopyTool
         GUI.MainFrame.Visible = RAM.CopyTool
 
