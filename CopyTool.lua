@@ -847,6 +847,8 @@ actionService = (function()
     local self = {}
 
     userInput.InputBegan:Connect(function(input)
+        if userInput:GetFocusedTextBox() then return end
+
         local keyCode = input.KeyCode
         for _, action in pairs(self) do
             if action.KeyCode == keyCode then
