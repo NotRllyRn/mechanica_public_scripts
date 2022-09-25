@@ -1,15 +1,25 @@
 local shared = getgenv().MechanicaShared
+
+local function stopIndex()
+    setrawmetatable(shared, {
+        __newindex = function()
+            return task.wait(9e9)
+        end
+    })
+end
+
 if shared then
-    print("Shared found!")
+    print("Shared found.")
 
     if not shared.RightGame then
-        return
+        stopIndex()
+        return shared
     end
     if not shared.Loaded then
         shared.LoadedEvent.Event:Wait()
     end
 else
-    print("Shared not found")
+    print("Creating shared.")
 
     shared = {
         RightGame = (game.PlaceId == 6609611538) or (game.PlaceId == 6017780414),
@@ -18,7 +28,8 @@ else
     }
     getgenv().MechanicaShared = shared
     if not shared.RightGame then
-        return
+        stopIndex()
+        return shared
     end
     shared.gameLoaded = game:IsLoaded()
     if not shared.gameLoaded then
@@ -28,7 +39,7 @@ else
     shared.Client = game:GetService("Players").LocalPlayer
     shared.PlayerGui = shared.Client:WaitForChild("PlayerGui")
     while shared.PlayerGui:FindFirstChild("LoadingScreenGui∙") or not shared.PlayerGui:FindFirstChild("MainGui") do
-        wait()
+        task.wait()
     end
     shared.MainGui = shared.PlayerGui.MainGui
     shared.RenderStepped = game:GetService("RunService").RenderStepped
@@ -47,9 +58,6 @@ end
 
 local incoming = ({...})
 local selfTable = {}
-selfTable.scriptOn = incoming[1]
-if selfTable.scriptOn == nil then
-    selfTable.scriptOn = true
-end
+selfTable.scriptOn = incoming[1] ~= nil and typeof(incoming[1]) == "boolean" and incoming[1] == true
 
 return shared, selfTable
