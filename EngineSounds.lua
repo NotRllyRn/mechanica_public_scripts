@@ -58,16 +58,18 @@ end
 
 local old
 old = hookmetamethod(game, "__namecall", function(...)
-    local method, self, t, i = getnamecallmethod(), select(1, ...)
+    local method, self, t, instance = getnamecallmethod(), select(1, ...)
     if method == "FireServer" then
         if self == Configure then
-            if i.Name == "Gasoline Engine" then
-                local Ratio, RevLength, Configuration = nil, nil, i.Configuration
-                for _, v in ipairs(t) do
+            if instance.Name == "Gasoline Engine" then
+                local Ratio, RevLength, Configuration = nil, nil, instance.Configuration
+                for i, v in ipairs(t) do
                     if v.valueName == "Ratio" then
                         Ratio = v.value
+                        t[i] = nil
                     elseif v.valueName == "RevLength" then
                         RevLength = v.value
+                        t[i] = nil
                     end
 
                     if Ratio and RevLength then
