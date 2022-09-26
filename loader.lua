@@ -1,7 +1,7 @@
 local shared = getgenv().MechanicaShared
 
 local function stopIndex()
-    setrawmetatable(shared, {
+    return setmetatable({}, {
         __newindex = function()
             return task.wait(9e9)
         end
@@ -12,8 +12,7 @@ if shared then
     print("Shared found.")
 
     if not shared.RightGame then
-        stopIndex()
-        return shared
+        return shared, stopIndex()
     end
     if not shared.Loaded then
         shared.LoadedEvent.Event:Wait()
@@ -28,8 +27,7 @@ else
     }
     getgenv().MechanicaShared = shared
     if not shared.RightGame then
-        stopIndex()
-        return shared
+        return shared, stopIndex()
     end
     shared.gameLoaded = game:IsLoaded()
     if not shared.gameLoaded then
