@@ -56,6 +56,6 @@ end
 
 local incoming = ({...})
 local selfTable = {}
-selfTable.scriptOn = incoming[1] ~= nil and typeof(incoming[1]) == "boolean" and incoming[1] == true
+selfTable.scriptOn = (incoming[1] ~= nil and typeof(incoming[1]) == "boolean" and incoming[1] == true) or true
 
 return shared, selfTable
