@@ -15,6 +15,11 @@ local setupThruster = function(thruster)
     Sound.Volume = 0
     Sound.Parent = thruster.Base
 
+    local distort = Instance.new("DistortionSoundEffect")
+    distort.Name = "Distort"
+    distort.Level = 0.19
+    distort.Parent = Sound
+
     local Connections = {}
     Connections.c1 = thruster.Destroying:Connect(function()
         for _, v in pairs(Connections) do
@@ -27,9 +32,11 @@ local setupThruster = function(thruster)
     Connections.c2 = thruster.Base.Force:GetPropertyChangedSignal("Force"):Connect(function()
         local Force = thruster.Base.Force.Force
         if math.abs(Force.x) ~= 0 then
-            Sound.Volume = 1
+            Sound.Volume = 0.25
+            distort.Level = 0.8
         else
-            Sound.Volume = 0
+            Sound.Volume = 0.1
+            distort.Level = 0.19
         end
     end)
 end
