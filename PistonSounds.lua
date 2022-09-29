@@ -6,7 +6,7 @@ local Configure = Events.Configure
 local setupPiston = function(piston)
     local Sound = Instance.new("Sound")
     Sound.Name = "PistonSound"
-    Sound.SoundId = "rbxassetid://11077629936"
+    Sound.SoundId = "rbxassetid://178513553" -- // 11077629936
     Sound.Looped = true
     Sound.Playing = true
     Sound.Volume = 0
@@ -26,11 +26,17 @@ local setupPiston = function(piston)
         local neg = velocity < 0
         velocity = math.abs(velocity)
 
-        Sound.PlaybackSpeed = 0.3 + velocity / 50 - (neg and 0.1 or 0)
-        Sound.Volume = (0.8 + velocity * 0.01 / 5) * (velocity == 0 and 0 or 1)
+        Sound.PlaybackSpeed = 0.7 - (neg and 0.1 or 0)
+        Sound.Volume = (0.1 - (velocity * 0.01)^2) * (math.round(velocity) == 0 and 0 or 1)
     end)
 end
 
+local c = workspace.Creations:FindFirstChild(shared.Client.Name) and workspace.Creations[shared.Client.Name].ChildAdded:Connect(function(child)
+    task.wait()
+    if child:IsA("Model") and child.Name == "Piston" then
+        setupPiston(child)
+    end
+end)
 workspace.Creations.ChildAdded:Connect(function(child)
     task.wait()
     if child.Name == shared.Client.Name then
@@ -39,6 +45,15 @@ workspace.Creations.ChildAdded:Connect(function(child)
                 setupPiston(v)
             end
         end
+
+        if c and c.Connected then
+            c:Disconnect()
+        end
+        c = child.ChildAdded:Connect(function(child)
+            if child:IsA("Model") and child.Name == "Piston" then
+                setupPiston(child)
+            end
+        end)
     end
 end)
 
