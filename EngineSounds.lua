@@ -4,7 +4,11 @@ selfTable.Name = "Engine Sounds"
 local Events, Values = shared.MainGui.Events, shared.MainGui.Values
 local SpawnToggle, Configure = Events.SpawnToggle, Events.Configure
 local setupEngine = function(engine)
-    local Ratio, RevLength, Configuration = Instance.new("NumberValue"), Instance.new("NumberValue"), engine.Configuration
+    local Configuration = engine.Configuration
+    if Configuration:FindFirstChild("Ratio") or Configuration:FindFirstChild("RevLength") then
+        return
+    end
+    local Ratio, RevLength = Instance.new("NumberValue"), Instance.new("NumberValue")
 
     Ratio.Name, RevLength.Name = "Ratio", "RevLength"
     Ratio.Value, RevLength.Value = 0.1, 3
@@ -87,6 +91,12 @@ old = hookmetamethod(game, "__namecall", function(...)
     return old(...)
 end)
 
+local c = workspace.Creations:FindFirstChild(shared.Client.Name) and workspace.Creations[shared.Client.Name].ChildAdded:Connect(function(child)
+    task.wait()
+    if child:IsA("Model") and child.Name == "Gasoline Engine" then
+        setupEngine(child)
+    end
+end)
 workspace.Creations.ChildAdded:Connect(function(child)
     task.wait()
     if child.Name == shared.Client.Name then
@@ -95,6 +105,15 @@ workspace.Creations.ChildAdded:Connect(function(child)
                 setupEngine(v)
             end
         end
+
+        if c and c.Connected then
+            c:Disconnect()
+        end
+        c = child.ChildAdded:Connect(function(child)
+            if child:IsA("Model") and child.Name == "Gasoline Engine" then
+                setupEngine(child)
+            end
+        end)
     end
 end)
 
