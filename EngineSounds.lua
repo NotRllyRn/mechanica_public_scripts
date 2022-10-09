@@ -24,7 +24,7 @@ local setupEngine = function(engine)
     local Connections = {}
     local update = function()
         if engine and engine.Parent and selfTable.scriptOn and Values.Spawned.Value then
-            local roundedMagnitude = math.round(engine.WeldPoint.AssemblyLinearVelocity.Magnitude)
+            local roundedMagnitude = math.round(engine.WeldPoint.AssemblyAngularVelocity.Magnitude)
 
             EngineSound.PlaybackSpeed = roundedMagnitude * Ratio.Value / RevLength.Value
             EngineSound.Volume = 0.8 + roundedMagnitude * 0.01 / 5
