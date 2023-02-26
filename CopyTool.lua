@@ -266,7 +266,7 @@ local EventsFolder = client.PlayerGui.MainGui.Events
 local camera = workspace.Camera
 local mouse = client:GetMouse()
 
-local build = EventsFolder.Build
+local build = EventsFolder.Place
 local paint = EventsFolder.Paint
 local configure = EventsFolder.Configure
 
