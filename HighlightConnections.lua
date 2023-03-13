@@ -211,6 +211,10 @@ __tape.chunks['Highlight/init.lua'] = function(script)
     end
     function Highlight.ConfigurationPropertyChanged(self, configuration)
         if configuration.Instance.Value then
+            if configuration.HighlightParts then
+                configuration.HighlightParts:Reset()
+            end
+
             self:SetupPartsForConfiguration(configuration)
         else
             configuration.HighlightParts:Reset()
